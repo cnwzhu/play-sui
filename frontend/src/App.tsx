@@ -1,4 +1,4 @@
-import { useCurrentAccount, useSignAndExecuteTransaction } from '@mysten/dapp-kit';
+import { useCurrentAccount, useSignAndExecuteTransaction, ConnectButton } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, AlertCircle, CheckCircle2, Wallet, Coins, ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
@@ -17,7 +17,7 @@ interface Contract {
 }
 
 // NOTE: Update this with your deployed package ID
-const PACKAGE_ID = "0xc49d97d020d090d89e22c7104a923309a632b71ab75f111867c4ee5101a096c4"; // Assuming this is correct or will be updated by user
+const PACKAGE_ID = "0x364b4ffa3f81580b37fc32ef472410f313d31e8f82c3daad4d4dd4ed886e88fd"; // Assuming this is correct or will be updated by user
 
 function App() {
   const account = useCurrentAccount();
@@ -347,16 +347,16 @@ function App() {
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="w-full bg-[#1a1d26] border border-gray-700 rounded-lg px-4 py-3 text-white font-mono focus:border-blue-500 focus:outline-none transition-colors"
+                        className="w-full bg-[#1a1d26] border border-gray-700 hover:border-gray-500 rounded-lg px-4 py-3 text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 focus:outline-none transition-all duration-200"
                       />
                     </div>
                   </div>
 
                   {/* Action Button */}
                   {!account ? (
-                    <div className="text-center p-4 bg-blue-900/20 rounded-lg border border-blue-900/50">
-                      <p className="text-sm text-blue-200 mb-3">Connect wallet to trade</p>
-                    </div>
+                    <ConnectButton
+                      className="!w-full !py-3.5 !rounded-lg !font-bold !text-base !bg-blue-600 hover:!bg-blue-500 !text-white !shadow-lg !shadow-blue-900/20 !transition-all !border-none"
+                    />
                   ) : (
                     <button
                       onClick={placeBet}

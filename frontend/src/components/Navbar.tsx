@@ -9,9 +9,9 @@ export function Navbar() {
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.reload()}>
                     {/* Logo Icon (Simple Shape) */}
                     <div className="w-8 h-8 md:w-8 md:h-8 bg-white text-black flex items-center justify-center font-bold rounded-lg text-lg">
-                        P
+                        S
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-white hidden md:block">Polymarket</span>
+                    <span className="text-xl font-bold tracking-tight text-white hidden md:block">PlaySui</span>
                 </div>
 
                 <div className="relative max-w-lg w-full hidden md:block group">

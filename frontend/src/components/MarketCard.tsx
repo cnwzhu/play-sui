@@ -71,18 +71,28 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
                             </div>
                         </>
                     ) : (
-                        // Multi-option layout (List top 2)
-                        options.slice(0, 2).map((opt: string, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between">
-                                <span className="text-sm text-gray-300 font-medium truncate max-w-[60%]">{opt}</span>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-blue-400 font-bold">{idx === 0 ? mockPercent1 : mockPercent2}%</span>
-                                    <div className="hidden group-hover:block px-3 py-1 rounded bg-[#2c303b] hover:bg-gray-600 text-xs font-medium text-white transition-colors">
-                                        Trade
+                        // Multi-option layout (Scrollable list - unified styling with dynamic colors)
+                        <div className="max-h-[80px] overflow-y-auto pr-2 space-y-2">
+                            {options.map((opt: string, idx: number) => {
+                                const textColors = ["text-blue-400", "text-red-400", "text-green-400", "text-yellow-400", "text-purple-400", "text-pink-400", "text-cyan-400", "text-orange-400"];
+                                const bgHoverColors = ["group-hover/row:bg-blue-600", "group-hover/row:bg-red-600", "group-hover/row:bg-green-600", "group-hover/row:bg-yellow-600", "group-hover/row:bg-purple-600", "group-hover/row:bg-pink-600", "group-hover/row:bg-cyan-600", "group-hover/row:bg-orange-600"];
+                                const textColor = textColors[idx % textColors.length];
+                                const hoverBg = bgHoverColors[idx % bgHoverColors.length];
+
+                                return (
+                                <div key={idx} className="flex items-center justify-between group/row">
+                                    <span className="text-sm text-gray-300 font-medium truncate max-w-[50%]">{opt}</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className={`${textColor} font-bold text-sm`}>
+                                            {Math.floor(100 / options.length) + (idx === 0 ? 10 : -2)}%
+                                        </span>
+                                        <div className={`px-3 py-1.5 rounded bg-[#2c303b] ${textColor} text-xs font-bold uppercase tracking-wider ${hoverBg} group-hover/row:text-white transition-colors`}>
+                                            Trade
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            )})}
+                        </div>
                     )}
                 </div>
             </div>

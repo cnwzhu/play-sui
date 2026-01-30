@@ -8,7 +8,7 @@ pub struct Model {
     pub id: i32,
     pub contract_id: i32,
     pub timestamp: String, // storing as ISO string for simplicity in SQLite
-    pub yes_price: f64,
+    pub option_prices: String, // JSON string: [0.5, 0.5] or {"Yes": 0.5, "No": 0.5}
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

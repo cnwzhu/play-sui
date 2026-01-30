@@ -6,7 +6,7 @@ use axum::{
 use sea_orm::{
     ActiveModelTrait, DatabaseConnection, EntityTrait, QueryFilter, ColumnTrait, Set,
 };
-use crate::entities::market_history;
+use crate::entities::{market_history, contract};
 // use serde::Deserialize; // Remove if unused
 use std::time::SystemTime;
 use chrono::{DateTime, Utc};
@@ -24,17 +24,41 @@ pub async fn get_contract_history(
 
     // If history is empty, let's generate some mock data for visualization
     if history.is_empty() {
+         // 1. Fetch contract to determine number of options
+         let contract_model = contract::Entity::find_by_id(contract_id)
+            .one(&db)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+            .ok_or((StatusCode::NOT_FOUND, "Contract not found".to_string()))?;
+
+         let options_count = contract_model.options
+            .and_then(|s| serde_json::from_str::<Vec<String>>(&s).ok())
+            .map(|v| v.len())
+            .unwrap_or(2);
+
          let mut mock_data = Vec::new();
          let mut active_models = Vec::new();
 
          {
              let mut rng = rand::thread_rng();
              let now = SystemTime::now();
-             let mut current_price = 0.5;
+             
+             // Initialize current prices for each option evenly
+             let mut current_prices: Vec<f64> = vec![1.0 / (options_count as f64); options_count];
              
              for i in (0..30).rev() {
-                 let drift: f64 = rng.gen_range(-0.05..0.05);
-                 current_price = (current_price + drift).clamp(0.05_f64, 0.95_f64);
+                 // Drift each price slightly
+                 let mut sum = 0.0;
+                 for p in &mut current_prices {
+                     let drift: f64 = rng.gen_range(-0.05..0.05);
+                     *p = (*p + drift).clamp(0.01, 0.99);
+                     sum += *p;
+                 }
+                 
+                 // Normalize so they sum to 1.0
+                 for p in &mut current_prices {
+                     *p /= sum;
+                 }
                  
                  // Calculate time: i days ago
                  let time = now - std::time::Duration::from_secs(i * 24 * 3600);
@@ -43,7 +67,7 @@ pub async fn get_contract_history(
                  let point = market_history::ActiveModel {
                      contract_id: Set(contract_id),
                      timestamp: Set(datetime.to_rfc3339()),
-                     yes_price: Set(current_price),
+                     option_prices: Set(serde_json::to_string(&current_prices).unwrap()),
                      ..Default::default()
                  };
                  active_models.push(point);
@@ -51,11 +75,6 @@ pub async fn get_contract_history(
          }
 
          if !active_models.is_empty() {
-            // Using insert_many would be efficient but let's stick to loop for simple response construction
-            // or just use insert_many and then Convert back to Model. 
-            // For simplicity and to match return type, we can just insert one by one or fetch again.
-            // Let's iterate and insert.
-            
             for point in active_models {
                 let saved = point.insert(&db).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
                 mock_data.push(saved);

@@ -1,35 +1,54 @@
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 
 interface MarketChartProps {
     data: any[];
 }
 
-const MarketChart = ({ data }: MarketChartProps) => {
-    // Transform data to percentages for display if needed, or better, 
-    // chart expects specific format. 
-    // Data from backend: { timestamp: string, yes_price: number, contract_id: number, id: number }
+const COLORS = [
+  "#3b82f6", // Blue
+  "#ef4444", // Red
+  "#10b981", // Green
+  "#f59e0b", // Yellow
+  "#8b5cf6", // Purple
+  "#ec4899", // Pink
+  "#06b6d4", // Cyan
+  "#f97316", // Orange
+];
 
-    // Format timestamp
-    const formattedData = data.map(d => ({
-        ...d,
-        date: new Date(d.timestamp).toLocaleDateString(),
-        yes_percent: Math.round(d.yes_price * 100),
-        no_percent: Math.round((1 - d.yes_price) * 100)
-    }));
+const MarketChart = ({ data }: MarketChartProps) => {
+    if (!data || data.length === 0) return null;
+
+    // Parse one item to check number of options
+    const firstPrices = JSON.parse(data[0].option_prices || "[]");
+    const numOptions = Array.isArray(firstPrices) ? firstPrices.length : 0;
+
+    // Format data
+    const formattedData = data.map(d => {
+        const prices = JSON.parse(d.option_prices || "[]");
+        const point: any = {
+            date: new Date(d.timestamp).toLocaleDateString(),
+            raw_timestamp: d.timestamp,
+        };
+        
+        if (Array.isArray(prices)) {
+            prices.forEach((p: number, idx: number) => {
+                point[`option_${idx}`] = Math.round(p * 100);
+            });
+        }
+        return point;
+    });
 
     return (
         <div className="h-[300px] w-full mt-6">
             <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={formattedData}>
                     <defs>
-                        <linearGradient id="colorYes" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorNo" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                        </linearGradient>
+                        {Array.from({ length: numOptions }).map((_, idx) => (
+                            <linearGradient key={idx} id={`colorOption${idx}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={COLORS[idx % COLORS.length]} stopOpacity={0.3} />
+                                <stop offset="95%" stopColor={COLORS[idx % COLORS.length]} stopOpacity={0} />
+                            </linearGradient>
+                        ))}
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                     <XAxis
@@ -50,24 +69,20 @@ const MarketChart = ({ data }: MarketChartProps) => {
                         contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
                         itemStyle={{ color: '#fff' }}
                     />
-                    <Area
-                        type="monotone"
-                        dataKey="yes_percent"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        fillOpacity={1}
-                        fill="url(#colorYes)"
-                        name="Yes"
-                    />
-                    <Area
-                        type="monotone"
-                        dataKey="no_percent"
-                        stroke="#ef4444"
-                        strokeWidth={2}
-                        fillOpacity={1}
-                        fill="url(#colorNo)"
-                        name="No"
-                    />
+                    <Legend />
+                    {Array.from({ length: numOptions }).map((_, idx) => (
+                        <Area
+                            key={idx}
+                            type="monotone"
+                            dataKey={`option_${idx}`}
+                            stroke={COLORS[idx % COLORS.length]}
+                            strokeWidth={2}
+                            fillOpacity={1}
+                            fill={`url(#colorOption${idx})`}
+                            name={`Option ${idx + 1}`} // Ideally map to actual option name if passed
+                            stackId="1" // Stack them to show total probability 100%? Or overlap? Overlap is usually better for comparison unless it's strictly parts of whole. Let's not stack to see trends clearly.
+                        />
+                    ))}
                 </AreaChart>
             </ResponsiveContainer>
         </div>

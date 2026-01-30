@@ -51,6 +51,9 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
+            # Nix Tools
+            nixd
+
             # Rust Environment
             rustToolchain
             pkg-config
