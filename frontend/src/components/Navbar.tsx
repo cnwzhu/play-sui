@@ -1,7 +1,11 @@
 import { Search, Menu, HelpCircle } from 'lucide-react';
 import { ConnectButton } from '@mysten/dapp-kit';
 
-export function Navbar() {
+interface NavbarProps {
+    onSearch: (query: string) => void;
+}
+
+export function Navbar({ onSearch }: NavbarProps) {
     return (
         <nav className="flex items-center justify-between px-6 py-3 border-b border-gray-800 bg-[#1a1d26]">
             {/* Left: Logo & Search */}
@@ -19,6 +23,7 @@ export function Navbar() {
                     <input
                         type="text"
                         placeholder="Search markets..."
+                        onChange={(e) => onSearch(e.target.value)}
                         className="w-full bg-[#242832] border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-600 focus:bg-[#2c303b] transition-all"
                     />
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs border border-gray-700 px-1.5 py-0.5 rounded">/</div>

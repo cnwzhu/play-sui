@@ -14,6 +14,13 @@ interface Contract {
   address: string;
   description?: string;
   options?: string;
+  category_id?: number;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  icon?: string;
 }
 
 // NOTE: Update this with your deployed package ID
@@ -26,6 +33,7 @@ function App() {
   // Navigation State
   const [view, setView] = useState<'home' | 'market'>('home');
   const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Betting State
   const [outcome, setOutcome] = useState<number>(0);
@@ -34,20 +42,42 @@ function App() {
 
   // Data State
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [contractHistory, setContractHistory] = useState<any[]>([]);
+  const [timeRange, setTimeRange] = useState("1M");
   const [loading, setLoading] = useState(true);
 
   // Manager Form
   const [newContractName, setNewContractName] = useState("");
   const [newContractDesc, setNewContractDesc] = useState("");
   const [newContractOptions, setNewContractOptions] = useState<string[]>(["Yes", "No"]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
 
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:3000/contracts')
+    // Fetch Categories
+    fetch('http://localhost:3000/categories')
+      .then(res => res.json())
+      .then(data => setCategories(data))
+      .catch(err => console.error("Failed to fetch categories:", err));
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+
+    if (searchQuery) params.append("q", searchQuery);
+
+    if (activeCategory !== "All" && activeCategory !== "New") {
+        const catObj = categories.find(c => c.name === activeCategory);
+        if (catObj) params.append("category_id", catObj.id.toString());
+    }
+
+    // Fetch Contracts with filters
+    fetch(`http://localhost:3000/contracts?${params.toString()}`)
       .then(res => res.json())
       .then(data => {
         setContracts(data);
@@ -57,18 +87,22 @@ function App() {
         console.error("Failed to fetch contracts:", err);
         setLoading(false);
       });
-  }, []);
+  }, [activeCategory, searchQuery, categories]);
 
   useEffect(() => {
     if (selectedContract && view === 'market') {
-      fetch(`http://localhost:3000/contracts/${selectedContract.id}/history`)
+      fetch(`http://localhost:3000/contracts/${selectedContract.id}/history?range=${timeRange}`)
         .then(res => res.json())
         .then(data => setContractHistory(data))
         .catch(err => console.error(err));
+    }
+  }, [selectedContract, view, timeRange]);
 
+  useEffect(() => {
+    if (selectedContract) {
       setOutcome(0);
     }
-  }, [selectedContract, view]);
+  }, [selectedContract]);
 
   const handleContractClick = (contract: Contract) => {
     setSelectedContract(contract);
@@ -93,7 +127,7 @@ function App() {
   };
 
   // Helper to save to backend (Now capable of triggering creation too)
-  const createMarketBackend = async (name: string, desc: string, options: string[]) => {
+  const createMarketBackend = async (name: string, desc: string, options: string[], categoryId: number | null) => {
     const res = await fetch('http://localhost:3000/contracts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -102,6 +136,7 @@ function App() {
         address: "", // Empty address signals Backend to create on-chain
         description: desc,
         options: options,
+        category_id: categoryId,
       })
     });
     if (!res.ok) throw new Error("Backend failed to create market");
@@ -124,7 +159,7 @@ function App() {
     setIsCreating(true);
 
     try {
-      const newContract = await createMarketBackend(newContractName, newContractDesc, optionsArray);
+      const newContract = await createMarketBackend(newContractName, newContractDesc, optionsArray, selectedCategoryId);
       setContracts(prev => [...prev, newContract]);
       setShowCreateModal(false);
       resetForm();
@@ -142,6 +177,7 @@ function App() {
     setNewContractName("");
     setNewContractDesc("");
     setNewContractOptions(["Yes", "No"]);
+    setSelectedCategoryId(null);
   };
 
   const placeBet = () => {
@@ -187,11 +223,12 @@ function App() {
     ? JSON.parse(selectedContract.options)
     : ["Yes", "No"];
 
-  const CATEGORIES = ["All", "New", "Sports", "Politics", "Crypto", "Business", "Science"];
+  // Backend filtering is now used
+  const filteredContracts = contracts;
 
   return (
     <div className="min-h-screen bg-[#1a1d26] text-white font-sans selection:bg-blue-500 selection:text-white pb-20">
-      <Navbar />
+      <Navbar onSearch={setSearchQuery} />
 
       {/* --- HOME VIEW --- */}
       {view === 'home' && (
@@ -199,18 +236,18 @@ function App() {
 
           {/* Subheader / Categories */}
           <div className="flex items-center gap-2 overflow-x-auto py-4 border-b border-gray-800 scrollbar-hide mb-6">
-            {CATEGORIES.map(cat => (
+            {categories.map(cat => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.name)}
                 className={clsx(
                   "px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors",
-                  activeCategory === cat
+                  activeCategory === cat.name
                     ? "bg-[#2c303b] text-white"
                     : "text-gray-400 hover:text-gray-200 hover:bg-[#242832]"
                 )}
               >
-                {cat}
+                {cat.name}
               </button>
             ))}
             <button
@@ -223,7 +260,7 @@ function App() {
           </div>
 
           {/* Featured / Hero Section (Optional, mimicking "Trending" or large card) */}
-          {contracts.length > 0 && (
+          {filteredContracts.length > 0 && (
             <section className="mb-12">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-5 h-5 text-white" />
@@ -234,7 +271,7 @@ function App() {
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500 w-8 h-8" /></div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {contracts.map(contract => (
+                  {filteredContracts.map(contract => (
                     <MarketCard
                       key={contract.id}
                       contract={contract}
@@ -244,9 +281,9 @@ function App() {
                 </div>
               )}
 
-              {contracts.length === 0 && !loading && (
+              {filteredContracts.length === 0 && !loading && (
                 <div className="text-center py-20 text-gray-500 bg-[#1e212b] rounded-xl border border-gray-800 border-dashed">
-                  No markets available. Create one to get started.
+                  No markets available in this category. Create one to get started.
                 </div>
               )}
             </section>
@@ -289,8 +326,14 @@ function App() {
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-bold text-gray-300">Outcome Probability</h3>
                   <div className="flex gap-2">
-                    {['1H', '6H', '1D', '1W', 'ALL'].map(t => (
-                      <button key={t} className={`px-2 py-1 text-xs font-medium rounded ${t === 'ALL' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}>{t}</button>
+                    {['5m', '1h', '6h', '1d', '1w', '1M'].map(t => (
+                      <button 
+                        key={t} 
+                        onClick={() => setTimeRange(t)}
+                        className={`px-2 py-1 text-xs font-medium rounded uppercase ${timeRange === t ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+                      >
+                        {t}
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -388,6 +431,20 @@ function App() {
                 <label className="block text-sm text-gray-400 mb-1">Market Question</label>
                 <input className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
                   value={newContractName} onChange={e => setNewContractName(e.target.value)} placeholder="e.g. Who will win nearby..." />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Category</label>
+                <select
+                  className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
+                  value={selectedCategoryId || ""}
+                  onChange={e => setSelectedCategoryId(Number(e.target.value))}
+                >
+                  <option value="" disabled>Select a category</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* DYNAMIC OPTIONS */}
