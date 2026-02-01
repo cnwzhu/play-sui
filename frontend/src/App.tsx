@@ -1,10 +1,11 @@
 import { useCurrentAccount, useSignAndExecuteTransaction, ConnectButton } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { useState, useEffect } from 'react';
-import { Trophy, TrendingUp, AlertCircle, CheckCircle2, Coins, ArrowLeft, Loader2, Plus, Trash2, Star } from 'lucide-react';
+import { Trophy, TrendingUp, AlertCircle, CheckCircle2, Coins, ArrowLeft, Loader2, Star } from 'lucide-react';
 import MarketChart from './components/MarketChart';
 import { Navbar } from './components/Navbar';
 import { MarketCard } from './components/MarketCard';
+import { DebugTools } from './components/DebugTools';
 import clsx from 'clsx';
 
 interface Contract {
@@ -53,18 +54,13 @@ function App() {
   // Refresh Trigger
   const [refetchVersion, setRefetchVersion] = useState(0);
 
-  // Manager Form
-  const [newContractName, setNewContractName] = useState("");
-  const [newContractDesc, setNewContractDesc] = useState("");
-  const [newContractOptions, setNewContractOptions] = useState<string[]>(["Yes", "No"]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [newContractEndDate, setNewContractEndDate] = useState<string>("");
-
   // Favorites State
   const [favorites, setFavorites] = useState<number[]>([]);
 
-  const [isCreating, setIsCreating] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  // Removed old Create Market state variables (now in DebugTools)
+
+  // const [isCreating, setIsCreating] = useState(false); // Moved to DebugTools
+  // const [showCreateModal, setShowCreateModal] = useState(false); // Moved to DebugTools
 
   useEffect(() => {
     // Fetch Categories
@@ -126,21 +122,6 @@ function App() {
     window.scrollTo(0, 0);
   };
 
-  const updateOption = (index: number, value: string) => {
-    const updated = [...newContractOptions];
-    updated[index] = value;
-    setNewContractOptions(updated);
-  };
-
-  const addOption = () => {
-    setNewContractOptions([...newContractOptions, ""]);
-  };
-
-  const removeOption = (index: number) => {
-    if (newContractOptions.length <= 2) return;
-    const updated = newContractOptions.filter((_, i) => i !== index);
-    setNewContractOptions(updated);
-  };
 
   const toggleFavorite = async (e: React.MouseEvent, contractId: number) => {
     e.stopPropagation();
@@ -177,60 +158,9 @@ function App() {
     }
   };
 
-  // Helper to save to backend (Now capable of triggering creation too)
-  const createMarketBackend = async (name: string, desc: string, options: string[], categoryId: number | null, endDate: string) => {
-    const res = await fetch('http://localhost:3000/contracts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: name,
-        address: "", // Empty address signals Backend to create on-chain
-        description: desc,
-        options: options,
-        category_id: categoryId,
-        end_date: endDate || null,
-      })
-    });
-    if (!res.ok) throw new Error("Backend failed to create market");
-    return await res.json();
-  };
-
-  const handleCreateMarket = async () => {
-    if (!newContractName) return;
-
-    // Filter empty options
-    const optionsArray = newContractOptions.map(s => s.trim()).filter(s => s.length > 0);
-    if (optionsArray.length < 2) {
-      alert("Please provide at least 2 valid outcomes.");
-      return;
-    }
-
-    // Backend Creation Mode (Admin Mode)
-    // No wallet check required because the backend pays for gas.
-
-    setIsCreating(true);
-
-    try {
-      const newContract = await createMarketBackend(newContractName, newContractDesc, optionsArray, selectedCategoryId, newContractEndDate);
-      setContracts(prev => [...prev, newContract]);
-      setShowCreateModal(false);
-      resetForm();
-      handleContractClick(newContract);
-      alert("Market created successfully (by Admin Backend)!");
-    } catch (e) {
-      console.error(e);
-      alert("Failed to create market. See console.");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const resetForm = () => {
-    setNewContractName("");
-    setNewContractDesc("");
-    setNewContractOptions(["Yes", "No"]);
-    setSelectedCategoryId(null);
-    setNewContractEndDate("");
+  const handleMarketCreated = (newContract: Contract) => {
+    setContracts(prev => [...prev, newContract]);
+    handleContractClick(newContract);
   };
 
   const placeBet = () => {
@@ -346,13 +276,6 @@ function App() {
                 {cat.name}
               </button>
             ))}
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="ml-auto flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold whitespace-nowrap transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Create Market
-            </button>
           </div>
 
           {/* Featured / Hero Section (Optional, mimicking "Trending" or large card) */}
@@ -548,93 +471,7 @@ function App() {
         </main>
       )}
 
-      {/* --- CREATE MODAL (Updated) --- */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#1e212b] border border-gray-800 rounded-xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-white mb-4">Create New Market</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Market Question</label>
-                <input className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                  value={newContractName} onChange={e => setNewContractName(e.target.value)} placeholder="e.g. Who will win nearby..." />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Category</label>
-                <select
-                  className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                  value={selectedCategoryId || ""}
-                  onChange={e => setSelectedCategoryId(Number(e.target.value))}
-                >
-                  <option value="" disabled>Select a category</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* DYNAMIC OPTIONS */}
-              <div>
-                <label className="block text-sm text-gray-400 mb-2">Outcomes</label>
-                <div className="space-y-2">
-                  {newContractOptions.map((opt, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <input
-                        className="flex-1 bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                        value={opt}
-                        onChange={e => updateOption(idx, e.target.value)}
-                        placeholder={`Option ${idx + 1}`}
-                      />
-                      {newContractOptions.length > 2 && (
-                        <button
-                          onClick={() => removeOption(idx)}
-                          className="p-2 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={addOption}
-                    className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 mt-1"
-                  >
-                    <Plus className="w-3 h-3" /> Add Option
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Description (Optional)</label>
-                <textarea className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                  value={newContractDesc} onChange={e => setNewContractDesc(e.target.value)} rows={3} />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">End Date (Optional)</label>
-                <input
-                  type="date"
-                  className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                  value={newContractEndDate}
-                  onChange={e => setNewContractEndDate(e.target.value)}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowCreateModal(false)} className="flex-1 py-2 rounded-lg bg-gray-700 text-white font-medium hover:bg-gray-600">Cancel</button>
-                <button
-                  onClick={handleCreateMarket}
-                  disabled={isCreating}
-                  className={`flex-1 py-2 rounded-lg text-white font-bold transition-colors ${isCreating ? 'bg-blue-800 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500'}`}
-                >
-                  {isCreating ? 'Accessing Chain...' : 'Create'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <DebugTools categories={categories} onMarketCreated={handleMarketCreated} />
 
     </div>
   )
