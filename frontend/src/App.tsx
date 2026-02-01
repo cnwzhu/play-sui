@@ -25,8 +25,8 @@ interface Category {
   icon?: string;
 }
 
-// NOTE: Update this with your deployed package ID
-const PACKAGE_ID = "0x364b4ffa3f81580b37fc32ef472410f313d31e8f82c3daad4d4dd4ed886e88fd"; // Assuming this is correct or will be updated by user
+// Package ID is loaded from environment variable (set in root .env file)
+const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || "0x0";
 
 function App() {
   const account = useCurrentAccount();
@@ -190,16 +190,28 @@ function App() {
 
   const placeBet = () => {
     if (!account) return;
+    if (!selectedContract?.address) {
+      alert('Error: Market address not found');
+      return;
+    }
+
+    console.log('=== Place Bet Debug ===');
+    console.log('PACKAGE_ID:', PACKAGE_ID);
+    console.log('Market Address:', selectedContract.address);
+    console.log('Amount:', amount);
+    console.log('Outcome:', outcome);
+    console.log('======================');
+
     setIsProcessing(true);
 
     try {
       const tx = new Transaction();
-      const coin = tx.splitCoins(tx.gas, [amount]);
+      const [coin] = tx.splitCoins(tx.gas, [BigInt(amount)]);
 
       tx.moveCall({
         target: `${PACKAGE_ID}::market::place_bet`,
         arguments: [
-          tx.object(selectedContract?.address || "0x0"),
+          tx.object(selectedContract.address),
           coin,
           tx.pure.u8(outcome)
         ],

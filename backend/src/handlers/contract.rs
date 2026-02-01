@@ -128,7 +128,6 @@ pub async fn delete_contract(
 
 // --- Helper Functions ---
 
-const PACKAGE_ID: &str = "0x364b4ffa3f81580b37fc32ef472410f313d31e8f82c3daad4d4dd4ed886e88fd";
 const SUI_NETWORK_URL: &str = "https://fullnode.testnet.sui.io:443";
 
 async fn create_market_on_chain(
@@ -158,7 +157,13 @@ async fn create_market_on_chain(
     println!("Using Admin Account: {}", sender);
 
     // 3. Prepare Arguments
-    let package_id = ObjectID::from_str(PACKAGE_ID)?;
+    // PACKAGE_ID must be set via environment variable (set by `just dev-run`)
+    let env_package_id = std::env::var("PACKAGE_ID").map_err(|_| {
+        "PACKAGE_ID environment variable not set. Run with `just dev-run` to set it automatically."
+    })?;
+    println!("Using Package ID: {}", env_package_id);
+
+    let package_id = ObjectID::from_str(&env_package_id)?;
     let module = "market";
     let function = "create_market";
 

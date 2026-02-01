@@ -106,7 +106,7 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
                                                 {percentages[idx] || 0}%
                                             </span>
                                             <div className={`px-3 py-1.5 rounded bg-[#2c303b] ${textColor} text-xs font-bold uppercase tracking-wider ${hoverBg} group-hover/row:text-white transition-colors`}>
-                                                Trade
+                                                Buy {opt}
                                             </div>
                                         </div>
                                     </div>

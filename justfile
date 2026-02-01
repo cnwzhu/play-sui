@@ -23,32 +23,75 @@ build-contract:
 test-contract:
     cd contracts/polymarket && sui move test
 
-# Publish the contract (requires active environment)
+# Publish the contract and update PACKAGE_ID in .env
 publish:
-    cd contracts/polymarket && sui client publish --gas-budget 100000000
+    #!/usr/bin/env bash
+    set -e
+    echo "Publishing contract..."
+    cd contracts/polymarket
+    
+    # Remove Published.toml if exists to allow republishing
+    rm -f Published.toml
+    
+    # Publish and capture output
+    OUTPUT=$(sui client publish --gas-budget 100000000 2>&1)
+    echo "$OUTPUT"
+    
+    # Extract Package ID from output (handles box-drawing characters)
+    PACKAGE_ID=$(echo "$OUTPUT" | grep "PackageID:" | sed 's/.*PackageID: \([0-9a-fx]*\).*/\1/')
+    
+    if [ -z "$PACKAGE_ID" ]; then
+        echo "Error: Could not extract Package ID from output"
+        exit 1
+    fi
+    
+    echo ""
+    echo "✅ Extracted Package ID: $PACKAGE_ID"
+    
+    # Update .env file in project root
+    cd ../..
+    if [ -f .env ]; then
+        sed -i "s|^VITE_PACKAGE_ID=.*|VITE_PACKAGE_ID=$PACKAGE_ID|" .env
+        echo "✅ Updated PACKAGE_ID in .env"
+    else
+        echo "VITE_PACKAGE_ID=$PACKAGE_ID" > .env
+        echo "✅ Created .env with PACKAGE_ID"
+    fi
+    
+    echo ""
+    echo "🎉 Contract published successfully!"
+    echo "   Frontend will pick up new PACKAGE_ID on next reload."
+    echo "   Run 'just backend-run' to restart backend with new config."
 
 # --- Frontend ---
 
 # Install frontend dependencies
-install-frontend:
+install-ui:
     cd frontend && pnpm install
 
 # Run frontend dev server
-dev-frontend:
+dev-ui:
     cd frontend && pnpm dev
 
 # --- Oracle / Backend ---
 
-# Run the Rust backend
-backend-run:
-    export TMPDIR=/tmp && cd backend && cargo run
+# Run the Rust backend (loads config from root .env)
+dev-run:
+    #!/usr/bin/env bash
+    set -a
+    source .env 2>/dev/null || true
+    export TMPDIR=/tmp
+    export PACKAGE_ID="${VITE_PACKAGE_ID}"
+    export PLATFORM_ADMIN_ADDRESS="${VITE_PLATFORM_ADMIN_ADDRESS}"
+    set +a
+    cd backend && cargo run
 
 # Check the Rust backend code
-backend-check:
+dev-check:
     export TMPDIR=/tmp && cd backend && cargo check
 
 # Build the Rust backend (Release)
-backend-build:
+dev-build:
     export TMPDIR=/tmp && cd backend && cargo build --release
 
 # --- Sui Account Management ---
@@ -67,3 +110,9 @@ sui-create-account:
     @echo "View your balance:"
     sui client gas
 
+
+# Fund a specific address from faucet
+sui-faucet address:
+    @echo "Requesting testnet SUI for {{address}}..."
+    sui client faucet --url https://faucet.testnet.sui.io/gas --recipient {{address}}
+    @echo "Done!"

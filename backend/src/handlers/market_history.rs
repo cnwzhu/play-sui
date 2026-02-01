@@ -56,7 +56,7 @@ pub async fn get_contract_history(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // If no history yet, return at least one initial point (equal probability) to prevent chart errors
+    // If no history yet, return at least two points (equal probability) to prevent chart errors
     if history.is_empty() {
         let initial_prices = vec![1.0 / (options_count as f64); options_count];
         let price_json = serde_json::to_string(&initial_prices).unwrap();
@@ -78,6 +78,21 @@ pub async fn get_contract_history(
                 total_volume: 0.0,
             },
         ]));
+    }
+
+    // If only one history point, duplicate it to current time for proper chart display
+    if history.len() == 1 {
+        let last_prices = history[0].option_prices.clone();
+        let last_volume = history[0].total_volume;
+        let mut result = history;
+        result.push(market_history::Model {
+            id: 0,
+            contract_id,
+            timestamp: now.to_rfc3339(),
+            option_prices: last_prices,
+            total_volume: last_volume,
+        });
+        return Ok(Json(result));
     }
 
     Ok(Json(history))

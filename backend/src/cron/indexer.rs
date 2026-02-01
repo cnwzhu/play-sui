@@ -10,10 +10,18 @@ use sui_sdk::types::base_types::ObjectID;
 use sui_sdk::SuiClientBuilder;
 use tokio::time;
 
-const PACKAGE_ID: &str = "0x364b4ffa3f81580b37fc32ef472410f313d31e8f82c3daad4d4dd4ed886e88fd";
-
 pub async fn run_indexer(db: DatabaseConnection, mut rx: tokio::sync::mpsc::Receiver<()>) {
     println!("Starting Indexer Task...");
+
+    // Load PACKAGE_ID from environment variable (set by `just dev-run`)
+    let package_id_str = match std::env::var("PACKAGE_ID") {
+        Ok(id) => id,
+        Err(_) => {
+            eprintln!("PACKAGE_ID environment variable not set. Run with `just dev-run`.");
+            return;
+        }
+    };
+    println!("Indexer using PACKAGE_ID: {}", package_id_str);
 
     // Connect to Sui Mainnet (or Testnet based on env, currently hardcoded for demo)
     // Ideally this comes from ENV
@@ -60,7 +68,14 @@ pub async fn run_indexer(db: DatabaseConnection, mut rx: tokio::sync::mpsc::Rece
             };
 
             // Backfill check (if history was wiped but chain has data)
-            backfill_history_if_needed(&db, &sui_client, &contract_model, object_id).await;
+            backfill_history_if_needed(
+                &db,
+                &sui_client,
+                &contract_model,
+                object_id,
+                &package_id_str,
+            )
+            .await;
 
             // 2. Fetch Object from Chain
             let object_read = match sui_client
@@ -204,6 +219,7 @@ async fn backfill_history_if_needed(
     sui_client: &sui_sdk::SuiClient,
     contract: &contract::Model,
     object_id: ObjectID,
+    package_id_str: &str,
 ) {
     // Check if history empty
     let history_count = market_history::Entity::find()
@@ -220,7 +236,7 @@ async fn backfill_history_if_needed(
 
     // Query Events via Module
     let query = EventFilter::MoveModule {
-        package: ObjectID::from_str(PACKAGE_ID).unwrap_or(ObjectID::ZERO),
+        package: ObjectID::from_str(package_id_str).unwrap_or(ObjectID::ZERO),
         module: "market".parse().unwrap(),
     };
 

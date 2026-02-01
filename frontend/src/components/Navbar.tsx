@@ -1,5 +1,6 @@
 import { Search, Menu, HelpCircle } from 'lucide-react';
 import { ConnectButton } from '@mysten/dapp-kit';
+import logo from '../assets/logo.jpg';
 
 interface NavbarProps {
     onSearch: (query: string) => void;
@@ -11,10 +12,8 @@ export function Navbar({ onSearch }: NavbarProps) {
             {/* Left: Logo & Search */}
             <div className="flex items-center gap-8 flex-1">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.reload()}>
-                    {/* Logo Icon (Simple Shape) */}
-                    <div className="w-8 h-8 md:w-8 md:h-8 bg-white text-black flex items-center justify-center font-bold rounded-lg text-lg">
-                        S
-                    </div>
+                    {/* Logo Image */}
+                    <img src={logo} alt="PlaySui Logo" className="w-8 h-8 rounded-full" />
                     <span className="text-xl font-bold tracking-tight text-white hidden md:block">PlaySui</span>
                 </div>
 

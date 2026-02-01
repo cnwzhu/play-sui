@@ -10,7 +10,6 @@ module polymarket::market {
     const EMarketNotResolved: u64 = 1;
     const EInvalidOutcome: u64 = 2;
     const ENotAuthorized: u64 = 3;
-    const ENoWinnings: u64 = 4;
     const EInvalidPlatformFee: u64 = 5;
     const ENoFees: u64 = 6;
 
