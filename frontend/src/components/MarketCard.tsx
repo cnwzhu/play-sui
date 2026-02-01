@@ -1,4 +1,4 @@
-import { Trophy, Gift, TrendingUp, Star, CheckCircle } from 'lucide-react';
+import { Trophy, Gift, TrendingUp, Star, CheckCircle, Calendar } from 'lucide-react';
 
 interface Contract {
     id: number;
@@ -10,6 +10,7 @@ interface Contract {
     outcome_odds?: string;
     resolved?: boolean;
     winner?: number;
+    end_date?: string;
 }
 
 interface MarketCardProps {
@@ -54,6 +55,11 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
 
     const isResolved = contract.resolved === true;
     const winnerIndex = contract.winner;
+
+    // Formatting End Date
+    const endDateDisplay = contract.end_date
+        ? new Date(contract.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        : null;
 
     return (
         <div
@@ -169,10 +175,18 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
 
             {/* Footer */}
             <div className="px-4 py-3 border-t border-gray-800 flex items-center justify-between bg-[#242832]/50">
-                <span className="text-xs text-gray-500 font-medium font-mono flex items-center gap-1.5">
-                    <TrendingUp className="w-3 h-3" />
-                    {volume}
-                </span>
+                <div className="flex items-center gap-4">
+                    <span className="text-xs text-gray-500 font-medium font-mono flex items-center gap-1.5">
+                        <TrendingUp className="w-3 h-3" />
+                        {volume}
+                    </span>
+                    {!isResolved && endDateDisplay && (
+                        <span className="text-xs text-gray-500 font-medium font-mono flex items-center gap-1.5 border-l border-gray-700 pl-4">
+                            <Calendar className="w-3 h-3" />
+                            {endDateDisplay}
+                        </span>
+                    )}
+                </div>
                 <div className="flex gap-3 text-gray-600">
                     <Gift className="w-4 h-4 hover:text-white transition-colors" />
                     <div

@@ -3,6 +3,7 @@ import { Plus, Trash2, Wrench, Calendar, X } from 'lucide-react';
 import clsx from 'clsx';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useModal } from '../context/ModalContext'; // Import useModal
 
 interface Category {
     id: number;
@@ -25,6 +26,7 @@ interface DebugToolsProps {
 }
 
 export function DebugTools({ categories, contracts, onMarketCreated, onMarketResolved }: DebugToolsProps) {
+    const { alert, confirm } = useModal(); // Use custom hooks
     const [isOpen, setIsOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [activeTab, setActiveTab] = useState<'create' | 'oracle'>('create');
@@ -65,11 +67,11 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
 
     const handleResolveMarket = async () => {
         if (!selectedMarket) {
-            alert("Please select a market to resolve.");
+            await alert("Please select a market to resolve.");
             return;
         }
 
-        const confirmResolve = window.confirm(
+        const confirmResolve = await confirm(
             `Are you sure you want to resolve "${selectedMarket.name}" with winner: "${selectedMarketOptions[selectedWinnerIndex]}"?\n\nThis action is IRREVERSIBLE.`
         );
         if (!confirmResolve) return;
@@ -92,7 +94,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
             }
 
             const result = await res.json();
-            alert(`Market resolved successfully!\n\nTransaction: ${result.digest}\nStatus: ${result.status}`);
+            await alert(`Market resolved successfully!\n\nTransaction: ${result.digest}\nStatus: ${result.status}`);
 
             // Reset state
             setSelectedMarketId(null);
@@ -104,7 +106,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
             }
         } catch (e: any) {
             console.error(e);
-            alert(`Failed to resolve market: ${e.message}`);
+            await alert(`Failed to resolve market: ${e.message}`);
         } finally {
             setIsResolving(false);
         }
@@ -129,18 +131,18 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
 
     const handleCreateMarket = async () => {
         if (!newContractName) {
-            alert("Please enter a market question/name.");
+            await alert("Please enter a market question/name.");
             return;
         }
         if (!selectedCategoryId) {
-            alert("Please select a category.");
+            await alert("Please select a category.");
             return;
         }
 
         // Filter empty options
         const optionsArray = newContractOptions.map(s => s.trim()).filter(s => s.length > 0);
         if (optionsArray.length < 2) {
-            alert("Please provide at least 2 valid outcomes.");
+            await alert("Please provide at least 2 valid outcomes.");
             return;
         }
 
@@ -157,11 +159,11 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
             setSelectedCategoryId(null);
             setNewContractEndDate(null);
 
-            alert("Market created successfully (by Admin Backend)!");
+            await alert("Market created successfully (by Admin Backend)!");
             setIsOpen(false); // Close modal on success
         } catch (e) {
             console.error(e);
-            alert("Failed to create market. See console.");
+            await alert("Failed to create market. See console.");
         } finally {
             setIsCreating(false);
         }

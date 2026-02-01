@@ -6,6 +6,7 @@ import MarketChart from './components/MarketChart';
 import { Navbar } from './components/Navbar';
 import { MarketCard } from './components/MarketCard';
 import { DebugTools } from './components/DebugTools';
+import { ModalProvider, useModal } from './context/ModalContext'; // Import useModal
 import clsx from 'clsx';
 
 interface Contract {
@@ -32,8 +33,17 @@ interface Category {
 const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || "0x0";
 
 function App() {
+  return (
+    <ModalProvider>
+      <AppContent />
+    </ModalProvider>
+  );
+}
+
+function AppContent() {
   const account = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+  const { alert } = useModal(); // Use custom alert
 
   // Navigation State
   const [view, setView] = useState<'home' | 'market'>('home');
@@ -203,18 +213,18 @@ function App() {
             setIsProcessing(false);
 
             // Artificial delay to allow indexer/chain to process (optimistic UX)
-            setTimeout(() => {
+            setTimeout(async () => {
               // Trigger refreshes
               setSearchQuery(prev => prev + " "); // Hack to trigger contracts refresh? No, let's use a proper trigger.
               // Actually, let's just force a reload of the specific contract's history and list.
               // Because useEffect relies on state, let's add a version counter.
               setRefetchVersion(v => v + 1);
-              alert('Bet placed! Updating market data...');
+              await alert('Bet placed! Updating market data...');
             }, 2000);
           },
-          onError: (err) => {
+          onError: async (err) => {
             console.error('Error:', err);
-            alert('Error placing bet. Check console for details.');
+            await alert('Error placing bet. Check console for details.');
             setIsProcessing(false);
           }
         }
