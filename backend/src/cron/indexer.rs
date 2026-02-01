@@ -150,22 +150,30 @@ pub async fn run_indexer(db: DatabaseConnection, mut rx: tokio::sync::mpsc::Rece
 
                                 match latest_history {
                                     Some(last) => {
-                                        // Compare prices
-                                        // Standardize json generic value parsing or just string compare if deterministic
-                                        // Since we just generated `json_prices` with serde_json, it should be comparable
-                                        // if the previous one was also generated fairly standardly.
-                                        // However, string comparison of JSON can be flaky if order changes (though unlikely for simple vec).
-                                        // Better to parse both and compare.
+                                        // Compare prices using epsilon for float comparison
+                                        // This fixes an issue where multi-class markets (3+ options)
+                                        // would continuously insert data due to floating point precision
+                                        // differences (e.g., 1/3 = 0.333... has precision issues)
                                         let last_prices: Vec<f64> =
                                             serde_json::from_str(&last.option_prices)
                                                 .unwrap_or_default();
 
-                                        // Compare with current `prices`
-                                        // Use epsilon for float comparison just in case, or exact if we trust the logic
-                                        // Given it's same code running, exact match on f64 might work if inputs are identical integers from chain
-                                        // But let's use a small tolerance or just direct equality if we assume consistent derivation.
-                                        // Since input is integer stakes, the float result should be identical for same inputs.
-                                        last_prices != prices || last.total_volume != volume_sui
+                                        // Use epsilon-based comparison for floats
+                                        const EPSILON: f64 = 1e-9;
+
+                                        let prices_changed = if last_prices.len() != prices.len() {
+                                            true
+                                        } else {
+                                            last_prices
+                                                .iter()
+                                                .zip(prices.iter())
+                                                .any(|(a, b)| (a - b).abs() > EPSILON)
+                                        };
+
+                                        let volume_changed =
+                                            (last.total_volume - volume_sui).abs() > EPSILON;
+
+                                        prices_changed || volume_changed
                                     }
                                     None => true, // No history, must insert
                                 }
