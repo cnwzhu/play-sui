@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2, Wrench, ChevronDown, ChevronUp } from 'lucide-react';
+import clsx from 'clsx';
 
 interface Category {
     id: number;
@@ -56,7 +57,14 @@ export function DebugTools({ categories, onMarketCreated }: DebugToolsProps) {
     };
 
     const handleCreateMarket = async () => {
-        if (!newContractName) return;
+        if (!newContractName) {
+            alert("Please enter a market question/name.");
+            return;
+        }
+        if (!selectedCategoryId) {
+            alert("Please select a category.");
+            return;
+        }
 
         // Filter empty options
         const optionsArray = newContractOptions.map(s => s.trim()).filter(s => s.length > 0);
@@ -88,7 +96,7 @@ export function DebugTools({ categories, onMarketCreated }: DebugToolsProps) {
     };
 
     return (
-        <div className="border-t border-gray-800 bg-[#15171e] mt-20">
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-800 bg-[#15171e] shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full flex items-center justify-between p-4 text-gray-500 hover:text-white transition-colors"
@@ -101,7 +109,7 @@ export function DebugTools({ categories, onMarketCreated }: DebugToolsProps) {
             </button>
 
             {isOpen && (
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[1440px] mx-auto">
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-[1440px] mx-auto max-h-[70vh] overflow-y-auto">
                     {/* Create Market Section */}
                     <div className="bg-[#1e212b] border border-gray-800 rounded-xl p-6">
                         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
@@ -117,16 +125,21 @@ export function DebugTools({ categories, onMarketCreated }: DebugToolsProps) {
                             </div>
 
                             <div>
-                                <label className="block text-sm text-gray-400 mb-1">Category</label>
+                                <label className="block text-sm text-gray-400 mb-1">Category <span className="text-red-500">*</span></label>
                                 <select
-                                    className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
+                                    className={clsx(
+                                        "w-full bg-[#242832] border rounded-lg p-2 text-white focus:border-blue-500 outline-none",
+                                        !selectedCategoryId ? "border-gray-700" : "border-gray-700"
+                                    )}
                                     value={selectedCategoryId || ""}
                                     onChange={e => setSelectedCategoryId(Number(e.target.value))}
                                 >
                                     <option value="" disabled>Select a category</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
+                                    {categories
+                                        .filter(c => c.name !== "All" && c.name !== "New")
+                                        .map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
                                 </select>
                             </div>
 
