@@ -471,7 +471,7 @@ function App() {
         </main>
       )}
 
-      <DebugTools categories={categories} onMarketCreated={handleMarketCreated} />
+      <DebugTools categories={categories} contracts={contracts} onMarketCreated={handleMarketCreated} />
 
     </div>
   )
