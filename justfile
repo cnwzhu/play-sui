@@ -63,6 +63,51 @@ publish:
     echo "   Frontend will pick up new PACKAGE_ID on next reload."
     echo "   Run 'just backend-run' to restart backend with new config."
 
+# Upgrade the contract and update PACKAGE_ID in .env
+upgrade:
+    #!/usr/bin/env bash
+    set -e
+    echo "Upgrading contract..."
+    cd contracts/polymarket
+
+    # Check for UpgradeCap
+    # In a real scenario, we'd need to find the UpgradeCap ID. 
+    # For this dev setup, we assume the account used has it.
+    
+    # Run upgrade and capture output at gas budget 100M
+    OUTPUT=$(sui client upgrade --gas-budget 100000000 2>&1)
+    echo "$OUTPUT"
+
+    # Extract Package ID from output (handles box-drawing characters)
+    PACKAGE_ID=$(echo "$OUTPUT" | grep "PackageID:" | sed 's/.*PackageID: \([0-9a-fx]*\).*/\1/')
+
+    if [ -z "$PACKAGE_ID" ]; then
+        echo "Error: Could not extract Package ID from output"
+        # If it failed because of "Upgraded package must be strictly greater", warn user
+        if echo "$OUTPUT" | grep -q "strictly greater"; then
+            echo "Tip: Increment version in Move.toml before upgrading."
+        fi
+        exit 1
+    fi
+
+    echo ""
+    echo "✅ Extracted New Package ID: $PACKAGE_ID"
+
+    # Update .env file in project root
+    cd ../..
+    if [ -f .env ]; then
+        sed -i "s|^VITE_PACKAGE_ID=.*|VITE_PACKAGE_ID=$PACKAGE_ID|" .env
+        echo "✅ Updated PACKAGE_ID in .env"
+    else
+        echo "VITE_PACKAGE_ID=$PACKAGE_ID" > .env
+        echo "✅ Created .env with PACKAGE_ID"
+    fi
+
+    echo ""
+    echo "🎉 Contract upgraded successfully!"
+    echo "   Frontend will pick up new PACKAGE_ID on next reload."
+    echo "   Restart backend if needed."
+
 # --- Frontend ---
 
 # Install frontend dependencies
