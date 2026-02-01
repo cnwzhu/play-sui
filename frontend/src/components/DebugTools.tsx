@@ -34,7 +34,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
     // Create Market Form State
     const [newContractName, setNewContractName] = useState("");
     const [newContractDesc, setNewContractDesc] = useState("");
-    const [newContractOptions, setNewContractOptions] = useState<string[]>(["Yes", "No"]);
+    const [newContractOptions, setNewContractOptions] = useState<string[]>([]);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
     const [newContractEndDate, setNewContractEndDate] = useState<Date | null>(null);
 
@@ -60,7 +60,6 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
     };
 
     const removeOption = (index: number) => {
-        if (newContractOptions.length <= 2) return;
         const updated = newContractOptions.filter((_, i) => i !== index);
         setNewContractOptions(updated);
     };
@@ -155,7 +154,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
             // Reset Form
             setNewContractName("");
             setNewContractDesc("");
-            setNewContractOptions(["Yes", "No"]);
+            setNewContractOptions([]);
             setSelectedCategoryId(null);
             setNewContractEndDate(null);
 
@@ -183,7 +182,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
             {/* Modal Overlay */}
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-[#15171e] w-full max-w-2xl rounded-2xl border border-gray-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="bg-[#15171e] w-full max-w-4xl rounded-2xl border border-gray-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#1e212b]">
                             <div className="flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-gray-300">
@@ -291,14 +290,12 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
                                                             onChange={e => updateOption(idx, e.target.value)}
                                                             placeholder={`Option ${idx + 1}`}
                                                         />
-                                                        {newContractOptions.length > 2 && (
-                                                            <button
-                                                                onClick={() => removeOption(idx)}
-                                                                className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
-                                                        )}
+                                                        <button
+                                                            onClick={() => removeOption(idx)}
+                                                            className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
                                                     </div>
                                                 ))}
                                                 <button
