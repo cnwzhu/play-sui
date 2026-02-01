@@ -204,12 +204,29 @@ pub async fn run_indexer(db: DatabaseConnection, mut rx: tokio::sync::mpsc::Rece
                                 }
                             }
 
-                            // 6. Update Contract Entity (Volume & Odds)
+                            // 6. Update Contract Entity (Volume & Odds & Resolution Status)
                             // volume_sui is calculated above
+
+                            // Extract resolved and winner from chain
+                            let is_resolved = fields_json
+                                .get("resolved")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false);
+
+                            let winner_opt: Option<i32> = if is_resolved {
+                                fields_json
+                                    .get("winner")
+                                    .and_then(|v| v.as_u64())
+                                    .map(|w| w as i32)
+                            } else {
+                                None
+                            };
 
                             let mut active_contract: contract::ActiveModel = contract_model.into();
                             active_contract.total_volume = ActiveValue::Set(volume_sui);
                             active_contract.outcome_odds = ActiveValue::Set(Some(json_prices));
+                            active_contract.resolved = ActiveValue::Set(is_resolved);
+                            active_contract.winner = ActiveValue::Set(winner_opt);
 
                             if let Err(e) = active_contract.update(&db).await {
                                 eprintln!("Indexer: Failed to update contract details: {}", e);

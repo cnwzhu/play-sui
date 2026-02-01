@@ -57,6 +57,21 @@ pub async fn init_db(db_url: &str) -> Result<DatabaseConnection, Box<dyn std::er
         ))
         .await;
 
+    // Migration: Add resolved and winner columns for oracle resolution
+    let _ = db
+        .execute(sea_orm::Statement::from_string(
+            DbBackend::Sqlite,
+            "ALTER TABLE contracts ADD COLUMN resolved INTEGER DEFAULT 0;",
+        ))
+        .await;
+
+    let _ = db
+        .execute(sea_orm::Statement::from_string(
+            DbBackend::Sqlite,
+            "ALTER TABLE contracts ADD COLUMN winner INTEGER;",
+        ))
+        .await;
+
     // Seed Categories
     seed_categories(&db).await?;
 

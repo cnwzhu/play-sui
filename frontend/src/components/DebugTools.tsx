@@ -14,6 +14,7 @@ interface Contract {
     name: string;
     address: string;
     options?: string;
+    resolved?: boolean;
 }
 
 interface DebugToolsProps {
@@ -301,11 +302,16 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
                                     }}
                                 >
                                     <option value="" disabled>Select a market</option>
-                                    {contracts.map(contract => (
-                                        <option key={contract.id} value={contract.id}>
-                                            {contract.name} ({contract.address.slice(0, 8)}...)
-                                        </option>
-                                    ))}
+                                    {contracts
+                                        .filter(contract => !contract.resolved)
+                                        .map(contract => (
+                                            <option key={contract.id} value={contract.id}>
+                                                {contract.name} ({contract.address.slice(0, 8)}...)
+                                            </option>
+                                        ))}
+                                    {contracts.filter(c => !c.resolved).length === 0 && (
+                                        <option value="" disabled>No unresolved markets</option>
+                                    )}
                                 </select>
                             </div>
 

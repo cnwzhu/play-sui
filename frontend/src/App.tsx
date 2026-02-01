@@ -18,6 +18,8 @@ interface Contract {
   total_volume: number;
   outcome_odds?: string;
   end_date?: string;
+  resolved?: boolean;
+  winner?: number;
 }
 
 interface Category {
@@ -382,9 +384,22 @@ function App() {
                 <div className="p-4 border-b border-gray-800 bg-[#242832]">
                   <h3 className="font-bold text-white flex items-center gap-2">
                     <Coins className="w-4 h-4 text-yellow-500" />
-                    Trade
+                    {selectedContract.resolved ? 'Market Resolved' : 'Trade'}
                   </h3>
                 </div>
+
+                {/* Resolved Market Banner */}
+                {selectedContract.resolved && (
+                  <div className="p-4 bg-green-500/10 border-b border-green-500/20">
+                    <div className="flex items-center gap-2 text-green-400 font-bold mb-2">
+                      <CheckCircle2 className="w-5 h-5" />
+                      Winner: {currentOptions[selectedContract.winner ?? 0]}
+                    </div>
+                    <p className="text-sm text-gray-400">
+                      This market has been resolved. Betting is closed.
+                    </p>
+                  </div>
+                )}
 
                 <div className="p-5 space-y-6">
                   {/* Outcome Selection */}
@@ -394,76 +409,86 @@ function App() {
                       {currentOptions.map((opt: string, idx: number) => (
                         <button
                           key={idx}
-                          onClick={() => setOutcome(idx)}
+                          onClick={() => !selectedContract.resolved && setOutcome(idx)}
+                          disabled={selectedContract.resolved}
                           className={clsx(
                             "px-3 py-3 rounded-lg text-sm font-bold border transition-all text-center relative",
-                            outcome === idx
-                              ? "bg-blue-500/10 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.2)]"
-                              : "bg-[#2c303b] border-transparent text-gray-400 hover:bg-[#363b47]"
+                            selectedContract.resolved && selectedContract.winner === idx
+                              ? "bg-green-500/10 border-green-500 text-green-400"
+                              : selectedContract.resolved
+                                ? "bg-[#2c303b] border-transparent text-gray-500 cursor-not-allowed"
+                                : outcome === idx
+                                  ? "bg-blue-500/10 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.2)]"
+                                  : "bg-[#2c303b] border-transparent text-gray-400 hover:bg-[#363b47]"
                           )}
                         >
                           {opt}
-                          {outcome === idx && <CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-blue-500" />}
+                          {!selectedContract.resolved && outcome === idx && <CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-blue-500" />}
+                          {selectedContract.resolved && selectedContract.winner === idx && <CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-green-500" />}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Amount Input */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Amount (MIST)</label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="w-full bg-[#1a1d26] border border-gray-700 hover:border-gray-500 rounded-lg px-4 py-3 text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 focus:outline-none transition-all duration-200"
-                      />
-                    </div>
-                  </div>
+                  {/* Amount Input - only show if not resolved */}
+                  {!selectedContract.resolved && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Amount (MIST)</label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            className="w-full bg-[#1a1d26] border border-gray-700 hover:border-gray-500 rounded-lg px-4 py-3 text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 focus:outline-none transition-all duration-200"
+                          />
+                        </div>
+                      </div>
 
-                  {/* Platform Fee Display */}
-                  {amount && parseFloat(amount) > 0 && (
-                    <div className="space-y-2 bg-[#1a1d26]/50 p-3 rounded-lg border border-gray-800">
-                      <div className="flex justify-between text-xs text-gray-400">
-                        <span>Your Bet</span>
-                        <span className="font-mono">{amount} MIST</span>
+                      {/* Platform Fee Display */}
+                      {amount && parseFloat(amount) > 0 && (
+                        <div className="space-y-2 bg-[#1a1d26]/50 p-3 rounded-lg border border-gray-800">
+                          <div className="flex justify-between text-xs text-gray-400">
+                            <span>Your Bet</span>
+                            <span className="font-mono">{amount} MIST</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-400">
+                            <span>Platform Fee (2%)</span>
+                            <span className="font-mono text-yellow-500">
+                              -{Math.floor(parseFloat(amount) * 0.02)} MIST
+                            </span>
+                          </div>
+                          <div className="h-px bg-gray-700" />
+                          <div className="flex justify-between text-sm font-bold text-white">
+                            <span>Into Pool</span>
+                            <span className="font-mono text-blue-400">
+                              {Math.floor(parseFloat(amount) * 0.98)} MIST
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action Button */}
+                      {!account ? (
+                        <ConnectButton
+                          className="!w-full !py-3.5 !rounded-lg !font-bold !text-base !bg-blue-600 hover:!bg-blue-500 !text-white !shadow-lg !shadow-blue-900/20 !transition-all !border-none"
+                        />
+                      ) : (
+                        <button
+                          onClick={placeBet}
+                          disabled={isProcessing}
+                          className="w-full py-3.5 rounded-lg font-bold text-base bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isProcessing ? 'Processing...' : `Buy ${currentOptions[outcome]}`}
+                        </button>
+                      )}
+
+                      <div className="flex items-start gap-2 text-xs text-gray-500 bg-[#1a1d26] p-3 rounded-lg">
+                        <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                        <p>A 2% platform fee is deducted from your bet. Remaining funds held in contract until resolution. Winners share the pool.</p>
                       </div>
-                      <div className="flex justify-between text-xs text-gray-400">
-                        <span>Platform Fee (2%)</span>
-                        <span className="font-mono text-yellow-500">
-                          -{Math.floor(parseFloat(amount) * 0.02)} MIST
-                        </span>
-                      </div>
-                      <div className="h-px bg-gray-700" />
-                      <div className="flex justify-between text-sm font-bold text-white">
-                        <span>Into Pool</span>
-                        <span className="font-mono text-blue-400">
-                          {Math.floor(parseFloat(amount) * 0.98)} MIST
-                        </span>
-                      </div>
-                    </div>
+                    </>
                   )}
-
-                  {/* Action Button */}
-                  {!account ? (
-                    <ConnectButton
-                      className="!w-full !py-3.5 !rounded-lg !font-bold !text-base !bg-blue-600 hover:!bg-blue-500 !text-white !shadow-lg !shadow-blue-900/20 !transition-all !border-none"
-                    />
-                  ) : (
-                    <button
-                      onClick={placeBet}
-                      disabled={isProcessing}
-                      className="w-full py-3.5 rounded-lg font-bold text-base bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isProcessing ? 'Processing...' : `Buy ${currentOptions[outcome]}`}
-                    </button>
-                  )}
-
-                  <div className="flex items-start gap-2 text-xs text-gray-500 bg-[#1a1d26] p-3 rounded-lg">
-                    <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                    <p>A 2% platform fee is deducted from your bet. Remaining funds held in contract until resolution. Winners share the pool.</p>
-                  </div>
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { Trophy, Gift, TrendingUp, Star } from 'lucide-react';
+import { Trophy, Gift, TrendingUp, Star, CheckCircle } from 'lucide-react';
 
 interface Contract {
     id: number;
@@ -8,6 +8,8 @@ interface Contract {
     options?: string;
     total_volume: number;
     outcome_odds?: string;
+    resolved?: boolean;
+    winner?: number;
 }
 
 interface MarketCardProps {
@@ -50,21 +52,30 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
 
     const isBinary = options.length === 2 && options.includes("Yes") && options.includes("No");
 
+    const isResolved = contract.resolved === true;
+    const winnerIndex = contract.winner;
+
     return (
         <div
             onClick={() => onClick(contract)}
-            className="group bg-[#1e212b] border border-gray-800 hover:border-gray-600 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-xl hover:shadow-blue-900/10 hover:-translate-y-1 flex flex-col justify-between"
+            className={`group bg-[#1e212b] border rounded-xl overflow-hidden cursor-pointer transition-all duration-200 flex flex-col justify-between ${isResolved ? 'border-green-700/50 opacity-80' : 'border-gray-800 hover:border-gray-600 hover:shadow-xl hover:shadow-blue-900/10 hover:-translate-y-1'}`}
         >
             <div className="p-4 space-y-4">
                 {/* Header / Icon */}
                 <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 shrink-0 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center justify-center text-blue-400 font-bold text-xl group-hover:scale-105 transition-transform">
-                        {/* Placeholder Icon based on first letter or generic */}
-                        <Trophy className="w-6 h-6" />
+                    <div className={`w-12 h-12 shrink-0 border rounded-lg flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform ${isResolved ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'}`}>
+                        {isResolved ? <CheckCircle className="w-6 h-6" /> : <Trophy className="w-6 h-6" />}
                     </div>
-                    <h3 className="text-white font-medium leading-snug line-clamp-2 h-[3rem]">
-                        {contract.name}
-                    </h3>
+                    <div className="flex-1">
+                        {isResolved && (
+                            <span className="text-xs font-bold uppercase tracking-wider text-green-400 bg-green-500/10 px-2 py-0.5 rounded mb-1 inline-block">
+                                Resolved
+                            </span>
+                        )}
+                        <h3 className="text-white font-medium leading-snug line-clamp-2 h-[3rem]">
+                            {contract.name}
+                        </h3>
+                    </div>
                 </div>
 
                 {/* Outcomes / Odds */}
@@ -73,33 +84,45 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                         // Binary Layout (Yes/No rows)
                         <>
                             <div className="flex items-center justify-between group/row">
-                                <span className="text-sm text-gray-300 font-medium">{options[0]}</span>
+                                <span className={`text-sm font-medium flex items-center gap-1 ${winnerIndex === 0 ? 'text-green-400' : 'text-gray-300'}`}>
+                                    {winnerIndex === 0 && <CheckCircle className="w-4 h-4" />}
+                                    {options[0]}
+                                    {winnerIndex === 0 && <span className="text-xs">(Winner)</span>}
+                                </span>
                                 <div className="flex items-center gap-3">
                                     <span className="text-green-400 font-bold">{percentages[0]}%</span>
-                                    <div
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onClick(contract, 0);
-                                        }}
-                                        className="px-3 py-1.5 rounded bg-[#1a3a3a] text-[#00c99b] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#00c99b] group-hover/row:text-black transition-colors"
-                                    >
-                                        Buy Yes
-                                    </div>
+                                    {!isResolved && (
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onClick(contract, 0);
+                                            }}
+                                            className="px-3 py-1.5 rounded bg-[#1a3a3a] text-[#00c99b] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#00c99b] group-hover/row:text-black transition-colors"
+                                        >
+                                            Buy Yes
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex items-center justify-between group/row">
-                                <span className="text-sm text-gray-300 font-medium">{options[1]}</span>
+                                <span className={`text-sm font-medium flex items-center gap-1 ${winnerIndex === 1 ? 'text-green-400' : 'text-gray-300'}`}>
+                                    {winnerIndex === 1 && <CheckCircle className="w-4 h-4" />}
+                                    {options[1]}
+                                    {winnerIndex === 1 && <span className="text-xs">(Winner)</span>}
+                                </span>
                                 <div className="flex items-center gap-3">
                                     <span className="text-red-400 font-bold">{percentages[1]}%</span>
-                                    <div
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onClick(contract, 1);
-                                        }}
-                                        className="px-3 py-1.5 rounded bg-[#3a1a1a] text-[#ff4d4d] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#ff4d4d] group-hover/row:text-white transition-colors"
-                                    >
-                                        Buy No
-                                    </div>
+                                    {!isResolved && (
+                                        <div
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onClick(contract, 1);
+                                            }}
+                                            className="px-3 py-1.5 rounded bg-[#3a1a1a] text-[#ff4d4d] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#ff4d4d] group-hover/row:text-white transition-colors"
+                                        >
+                                            Buy No
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </>
@@ -112,22 +135,29 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                                 const textColor = textColors[idx % textColors.length];
                                 const hoverBg = bgHoverColors[idx % bgHoverColors.length];
 
+                                const isWinner = winnerIndex === idx;
                                 return (
                                     <div key={idx} className="flex items-center justify-between group/row">
-                                        <span className="text-sm text-gray-300 font-medium truncate max-w-[50%]">{opt}</span>
+                                        <span className={`text-sm font-medium truncate max-w-[50%] flex items-center gap-1 ${isWinner ? 'text-green-400' : 'text-gray-300'}`}>
+                                            {isWinner && <CheckCircle className="w-4 h-4 shrink-0" />}
+                                            {opt}
+                                            {isWinner && <span className="text-xs">(Winner)</span>}
+                                        </span>
                                         <div className="flex items-center gap-3">
-                                            <span className={`${textColor} font-bold text-sm`}>
+                                            <span className={`${isWinner ? 'text-green-400' : textColor} font-bold text-sm`}>
                                                 {percentages[idx] || 0}%
                                             </span>
-                                            <div
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onClick(contract, idx);
-                                                }}
-                                                className={`px-3 py-1.5 rounded bg-[#2c303b] ${textColor} text-xs font-bold uppercase tracking-wider ${hoverBg} group-hover/row:text-white transition-colors`}
-                                            >
-                                                Buy {opt}
-                                            </div>
+                                            {!isResolved && (
+                                                <div
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onClick(contract, idx);
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded bg-[#2c303b] ${textColor} text-xs font-bold uppercase tracking-wider ${hoverBg} group-hover/row:text-white transition-colors`}
+                                                >
+                                                    Buy {opt}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 )
