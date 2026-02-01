@@ -46,6 +46,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/oracle/resolve",
             axum::routing::post(handlers::oracle::resolve_market),
         )
+        .route(
+            "/favorites",
+            axum::routing::post(handlers::favorite::add_favorite)
+                .delete(handlers::favorite::remove_favorite),
+        )
+        .route(
+            "/favorites/{wallet}",
+            get(handlers::favorite::get_favorites),
+        )
         .layer(CorsLayer::permissive())
         .with_state(db)
         .layer(axum::Extension(tx));

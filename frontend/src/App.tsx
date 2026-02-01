@@ -1,7 +1,7 @@
 import { useCurrentAccount, useSignAndExecuteTransaction, ConnectButton } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { useState, useEffect } from 'react';
-import { Trophy, TrendingUp, AlertCircle, CheckCircle2, Coins, ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Trophy, TrendingUp, AlertCircle, CheckCircle2, Coins, ArrowLeft, Loader2, Plus, Trash2, Star } from 'lucide-react';
 import MarketChart from './components/MarketChart';
 import { Navbar } from './components/Navbar';
 import { MarketCard } from './components/MarketCard';
@@ -60,6 +60,9 @@ function App() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [newContractEndDate, setNewContractEndDate] = useState<string>("");
 
+  // Favorites State
+  const [favorites, setFavorites] = useState<number[]>([]);
+
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -93,7 +96,17 @@ function App() {
         console.error("Failed to fetch contracts:", err);
         setLoading(false);
       });
-  }, [activeCategory, searchQuery, categories, refetchVersion, view]);
+
+    // Fetch Favorites if connected
+    if (account?.address) {
+      fetch(`http://localhost:3000/favorites/${account.address}`)
+        .then(res => res.json())
+        .then(data => setFavorites(data))
+        .catch(err => console.error("Failed to fetch favorites:", err));
+    } else {
+      setFavorites([]);
+    }
+  }, [activeCategory, searchQuery, categories, refetchVersion, view, account?.address]);
 
   useEffect(() => {
     if (selectedContract && view === 'market') {
@@ -104,14 +117,11 @@ function App() {
     }
   }, [selectedContract, view, timeRange, refetchVersion]);
 
-  useEffect(() => {
-    if (selectedContract) {
-      setOutcome(0);
-    }
-  }, [selectedContract]);
 
-  const handleContractClick = (contract: Contract) => {
+
+  const handleContractClick = (contract: Contract, initialOutcomeIndex: number = 0) => {
     setSelectedContract(contract);
+    setOutcome(initialOutcomeIndex);
     setView('market');
     window.scrollTo(0, 0);
   };
@@ -130,6 +140,41 @@ function App() {
     if (newContractOptions.length <= 2) return;
     const updated = newContractOptions.filter((_, i) => i !== index);
     setNewContractOptions(updated);
+  };
+
+  const toggleFavorite = async (e: React.MouseEvent, contractId: number) => {
+    e.stopPropagation();
+    if (!account?.address) {
+      alert("Please connect your wallet to use favorites.");
+      return;
+    }
+
+    const isFav = favorites.includes(contractId);
+    if (isFav) {
+      // Remove
+      try {
+        const res = await fetch('http://localhost:3000/favorites', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet_address: account.address, contract_id: contractId })
+        });
+        if (res.ok) {
+          setFavorites(prev => prev.filter(id => id !== contractId));
+        }
+      } catch (e) { console.error(e); }
+    } else {
+      // Add
+      try {
+        const res = await fetch('http://localhost:3000/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet_address: account.address, contract_id: contractId })
+        });
+        if (res.ok) {
+          setFavorites(prev => [...prev, contractId]);
+        }
+      } catch (e) { console.error(e); }
+    }
   };
 
   // Helper to save to backend (Now capable of triggering creation too)
@@ -253,7 +298,16 @@ function App() {
     : ["Yes", "No"];
 
   // Backend filtering is now used
-  const filteredContracts = contracts;
+  // But if "Favorites" category is selected (which is client-side concept for now, or mixed), handle it.
+  // Actually, let's treat "Favorites" as a local filter on top of "All" or as a special request?
+  // User asked for convenient filtering.
+  // Let's modify filteredContracts if activeCategory is "Favorites".
+  // But "Favorites" isn't in DB categories.
+  // We can add a "Favorites" tab manually.
+
+  const finalDisplayContracts = activeCategory === "Favorites"
+    ? contracts.filter(c => favorites.includes(c.id))
+    : contracts;
 
   return (
     <div className="min-h-screen bg-[#1a1d26] text-white font-sans selection:bg-blue-500 selection:text-white pb-20">
@@ -265,6 +319,19 @@ function App() {
 
           {/* Subheader / Categories */}
           <div className="flex items-center gap-2 overflow-x-auto py-4 border-b border-gray-800 scrollbar-hide mb-6">
+            <button
+              onClick={() => setActiveCategory("Favorites")}
+              className={clsx(
+                "flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors",
+                activeCategory === "Favorites"
+                  ? "bg-yellow-500/10 text-yellow-500 border border-yellow-500/20"
+                  : "text-gray-400 hover:text-yellow-500 hover:bg-yellow-500/5"
+              )}
+            >
+              <Star className={clsx("w-4 h-4", activeCategory === "Favorites" ? "fill-yellow-500" : "")} />
+              Favorites
+            </button>
+            <div className="w-px h-6 bg-gray-800 mx-1" />
             {categories.map(cat => (
               <button
                 key={cat.id}
@@ -289,7 +356,7 @@ function App() {
           </div>
 
           {/* Featured / Hero Section (Optional, mimicking "Trending" or large card) */}
-          {filteredContracts.length > 0 && (
+          {finalDisplayContracts.length > 0 && (
             <section className="mb-12">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-5 h-5 text-white" />
@@ -300,17 +367,19 @@ function App() {
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500 w-8 h-8" /></div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredContracts.map(contract => (
+                  {finalDisplayContracts.map(contract => (
                     <MarketCard
                       key={contract.id}
                       contract={contract}
                       onClick={handleContractClick}
+                      isFavorite={favorites.includes(contract.id)}
+                      onToggleFavorite={(e) => toggleFavorite(e, contract.id)}
                     />
                   ))}
                 </div>
               )}
 
-              {filteredContracts.length === 0 && !loading && (
+              {finalDisplayContracts.length === 0 && !loading && (
                 <div className="text-center py-20 text-gray-500 bg-[#1e212b] rounded-xl border border-gray-800 border-dashed">
                   No markets available in this category. Create one to get started.
                 </div>

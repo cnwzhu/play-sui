@@ -1,7 +1,7 @@
 use crate::entities::{contract, market_history};
 use sea_orm::{
     ActiveModelTrait, ActiveValue, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait,
-    QueryFilter, QueryOrder,
+    QueryFilter,
 };
 use std::str::FromStr;
 use std::time::Duration;

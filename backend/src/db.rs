@@ -1,4 +1,4 @@
-use crate::entities::{category, contract, market_history};
+use crate::entities::{category, contract, favorite, market_history};
 use sea_orm::{
     ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, DbBackend, EntityTrait,
     PaginatorTrait, Schema, Set,
@@ -21,12 +21,17 @@ pub async fn init_db(db_url: &str) -> Result<DatabaseConnection, Box<dyn std::er
         .create_table_from_entity(category::Entity)
         .if_not_exists()
         .to_owned();
+    let create_table_favorite = schema
+        .create_table_from_entity(favorite::Entity)
+        .if_not_exists()
+        .to_owned();
 
     let builder = db.get_database_backend();
 
     db.execute(builder.build(&create_table_category)).await?;
     db.execute(builder.build(&create_table_contract)).await?;
     db.execute(builder.build(&create_table_history)).await?;
+    db.execute(builder.build(&create_table_favorite)).await?;
 
     // Migration: Add new columns if they don't exist
     // Check if the columns exist or simply try adding them (SQLite ignores if exists in some modes, but safer to catch error)

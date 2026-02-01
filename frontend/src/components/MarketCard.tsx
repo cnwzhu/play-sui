@@ -1,4 +1,4 @@
-import { Trophy, Gift, Bookmark, TrendingUp } from 'lucide-react';
+import { Trophy, Gift, TrendingUp, Star } from 'lucide-react';
 
 interface Contract {
     id: number;
@@ -12,10 +12,12 @@ interface Contract {
 
 interface MarketCardProps {
     contract: Contract;
-    onClick: (contract: Contract) => void;
+    onClick: (contract: Contract, initialOutcomeIndex?: number) => void;
+    isFavorite?: boolean;
+    onToggleFavorite?: (e: React.MouseEvent) => void;
 }
 
-export function MarketCard({ contract, onClick }: MarketCardProps) {
+export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavorite }: MarketCardProps) {
     // Parse options or default
     const options = contract.options
         ? JSON.parse(contract.options)
@@ -74,7 +76,13 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
                                 <span className="text-sm text-gray-300 font-medium">{options[0]}</span>
                                 <div className="flex items-center gap-3">
                                     <span className="text-green-400 font-bold">{percentages[0]}%</span>
-                                    <div className="px-3 py-1.5 rounded bg-[#1a3a3a] text-[#00c99b] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#00c99b] group-hover/row:text-black transition-colors">
+                                    <div
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onClick(contract, 0);
+                                        }}
+                                        className="px-3 py-1.5 rounded bg-[#1a3a3a] text-[#00c99b] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#00c99b] group-hover/row:text-black transition-colors"
+                                    >
                                         Buy Yes
                                     </div>
                                 </div>
@@ -83,7 +91,13 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
                                 <span className="text-sm text-gray-300 font-medium">{options[1]}</span>
                                 <div className="flex items-center gap-3">
                                     <span className="text-red-400 font-bold">{percentages[1]}%</span>
-                                    <div className="px-3 py-1.5 rounded bg-[#3a1a1a] text-[#ff4d4d] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#ff4d4d] group-hover/row:text-white transition-colors">
+                                    <div
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onClick(contract, 1);
+                                        }}
+                                        className="px-3 py-1.5 rounded bg-[#3a1a1a] text-[#ff4d4d] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#ff4d4d] group-hover/row:text-white transition-colors"
+                                    >
                                         Buy No
                                     </div>
                                 </div>
@@ -105,7 +119,13 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
                                             <span className={`${textColor} font-bold text-sm`}>
                                                 {percentages[idx] || 0}%
                                             </span>
-                                            <div className={`px-3 py-1.5 rounded bg-[#2c303b] ${textColor} text-xs font-bold uppercase tracking-wider ${hoverBg} group-hover/row:text-white transition-colors`}>
+                                            <div
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onClick(contract, idx);
+                                                }}
+                                                className={`px-3 py-1.5 rounded bg-[#2c303b] ${textColor} text-xs font-bold uppercase tracking-wider ${hoverBg} group-hover/row:text-white transition-colors`}
+                                            >
                                                 Buy {opt}
                                             </div>
                                         </div>
@@ -125,7 +145,21 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
                 </span>
                 <div className="flex gap-3 text-gray-600">
                     <Gift className="w-4 h-4 hover:text-white transition-colors" />
-                    <Bookmark className="w-4 h-4 hover:text-white transition-colors" />
+                    <div
+                        onClick={(e) => {
+                            if (onToggleFavorite) {
+                                e.stopPropagation();
+                                onToggleFavorite(e);
+                            }
+                        }}
+                        className={`transition-colors p-1 -m-1 rounded-full hover:bg-white/5 ${isFavorite ? 'text-yellow-500 hover:text-yellow-400' : 'hover:text-white'}`}
+                    >
+                        <Star
+                            className={`w-4 h-4 ${isFavorite ? 'fill-yellow-500' : ''}`}
+                            style={isFavorite ? {} : { fill: 'none' }}
+                        />
+                        {/* Actually Trophy is not a star. Wait, I should use Star. I will import Star from lucide-react first. */}
+                    </div>
                 </div>
             </div>
         </div>
