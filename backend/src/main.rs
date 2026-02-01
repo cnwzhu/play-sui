@@ -1,10 +1,14 @@
+#[cfg(not(debug_assertions))]
 use axum::{
     body::Body,
     http::{header, StatusCode, Uri},
     response::{IntoResponse, Response},
+};
+use axum::{
     routing::{delete, get},
     Router,
 };
+#[cfg(not(debug_assertions))]
 use rust_embed::Embed;
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
@@ -14,6 +18,7 @@ mod db;
 mod entities;
 mod handlers;
 
+#[cfg(not(debug_assertions))]
 #[derive(Embed)]
 #[folder = "../frontend/dist"]
 struct Assets;
@@ -36,7 +41,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // App state
-    let app = Router::new()
+    #[allow(unused_mut)]
+    let mut app = Router::new()
         .route(
             "/contracts",
             get(handlers::contract::list_contracts).post(handlers::contract::create_contract),
@@ -62,8 +68,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/favorites/{wallet}",
             get(handlers::favorite::get_favorites),
-        )
-        .fallback(static_handler)
+        );
+
+    // Only serve static files in release mode
+    #[cfg(not(debug_assertions))]
+    {
+        app = app.fallback(static_handler);
+    }
+
+    let app = app
         .layer(CorsLayer::permissive())
         .with_state(db)
         .layer(axum::Extension(tx));
@@ -102,6 +115,7 @@ async fn shutdown_signal() {
     }
 }
 
+#[cfg(not(debug_assertions))]
 async fn static_handler(uri: Uri) -> impl IntoResponse {
     let path = uri.path().trim_start_matches('/');
 
