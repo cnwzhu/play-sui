@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Wrench, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
+import { Plus, Trash2, Wrench, Calendar, X } from 'lucide-react';
 import clsx from 'clsx';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -158,6 +158,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
             setNewContractEndDate(null);
 
             alert("Market created successfully (by Admin Backend)!");
+            setIsOpen(false); // Close modal on success
         } catch (e) {
             console.error(e);
             alert("Failed to create market. See console.");
@@ -167,236 +168,250 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
     };
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-800 bg-[#15171e] shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+        <>
+            {/* Floating Action Button */}
             <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-4 text-gray-500 hover:text-white transition-colors"
+                onClick={() => setIsOpen(true)}
+                className="fixed bottom-6 right-6 z-40 bg-[#1e212b] border border-gray-700 hover:border-gray-500 text-gray-400 hover:text-white p-3 rounded-full shadow-xl transition-all hover:scale-105 group"
+                title="Open Debug Tools"
             >
-                <div className="flex items-center gap-2 font-mono text-sm uppercase tracking-wider">
-                    <Wrench className="w-4 h-4" />
-                    Developer & Debug Tools
-                </div>
-                {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                <Wrench className="w-6 h-6 group-hover:rotate-45 transition-transform" />
             </button>
 
+            {/* Modal Overlay */}
             {isOpen && (
-                <div className="p-6 max-w-[1440px] mx-auto max-h-[70vh] overflow-y-auto">
-                    {/* Tabs */}
-                    <div className="flex space-x-4 mb-6 border-b border-gray-800 pb-2">
-                        <button
-                            onClick={() => setActiveTab('create')}
-                            className={clsx(
-                                "flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors font-medium text-sm",
-                                activeTab === 'create'
-                                    ? "bg-[#1e212b] text-blue-500 border-b-2 border-blue-500"
-                                    : "text-gray-400 hover:text-white hover:bg-[#1e212b]"
-                            )}
-                        >
-                            <Plus className="w-4 h-4" />
-                            Create Market
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('oracle')}
-                            className={clsx(
-                                "flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors font-medium text-sm",
-                                activeTab === 'oracle'
-                                    ? "bg-[#1e212b] text-yellow-500 border-b-2 border-yellow-500"
-                                    : "text-gray-400 hover:text-white hover:bg-[#1e212b]"
-                            )}
-                        >
-                            <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                            Oracle Tools
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-8">
-                        {/* Create Market Section */}
-                        {activeTab === 'create' && (
-                            <div className="bg-[#1e212b] border border-gray-800 rounded-xl p-6">
-                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                    <Plus className="w-5 h-5 text-blue-500" />
-                                    Create Market (Admin)
-                                </h3>
-
-                                <div className="space-y-4 max-w-2xl">
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Market Question</label>
-                                        <input className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                                            value={newContractName} onChange={e => setNewContractName(e.target.value)} placeholder="e.g. Who will win nearby..." />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Category <span className="text-red-500">*</span></label>
-                                        <select
-                                            className={clsx(
-                                                "w-full bg-[#242832] border rounded-lg p-2 text-white focus:border-blue-500 outline-none",
-                                                !selectedCategoryId ? "border-gray-700" : "border-gray-700"
-                                            )}
-                                            value={selectedCategoryId || ""}
-                                            onChange={e => setSelectedCategoryId(Number(e.target.value))}
-                                        >
-                                            <option value="" disabled>Select a category</option>
-                                            {categories
-                                                .filter(c => c.name !== "All" && c.name !== "New")
-                                                .map(cat => (
-                                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                                ))}
-                                        </select>
-                                    </div>
-
-                                    {/* DYNAMIC OPTIONS */}
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-2">Outcomes</label>
-                                        <div className="space-y-2">
-                                            {newContractOptions.map((opt, idx) => (
-                                                <div key={idx} className="flex gap-2">
-                                                    <input
-                                                        className="flex-1 bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                                                        value={opt}
-                                                        onChange={e => updateOption(idx, e.target.value)}
-                                                        placeholder={`Option ${idx + 1}`}
-                                                    />
-                                                    {newContractOptions.length > 2 && (
-                                                        <button
-                                                            onClick={() => removeOption(idx)}
-                                                            className="p-2 bg-red-900/20 text-red-400 hover:bg-red-900/40 rounded-lg transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                            <button
-                                                onClick={addOption}
-                                                className="text-sm text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1 mt-1"
-                                            >
-                                                <Plus className="w-3 h-3" /> Add Option
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Description (Optional)</label>
-                                        <textarea className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                                            value={newContractDesc} onChange={e => setNewContractDesc(e.target.value)} rows={3} />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">End Date & Time (Optional)</label>
-                                        <div className="relative datepicker-dark">
-                                            <DatePicker
-                                                selected={newContractEndDate}
-                                                onChange={(date: Date | null) => setNewContractEndDate(date)}
-                                                showTimeSelect
-                                                timeFormat="HH:mm"
-                                                timeIntervals={15}
-                                                timeCaption="Time"
-                                                dateFormat="yyyy-MM-dd HH:mm"
-                                                minDate={new Date()}
-                                                placeholderText="Select end date and time"
-                                                className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none cursor-pointer"
-                                                calendarClassName="dark-calendar"
-                                                wrapperClassName="w-full"
-                                                popperPlacement="top-start"
-                                                showPopperArrow={false}
-                                            />
-                                            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        onClick={handleCreateMarket}
-                                        disabled={isCreating}
-                                        className={`w-full py-3 rounded-lg text-white font-bold transition-colors mt-2 ${isCreating ? 'bg-blue-800 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500'}`}
-                                    >
-                                        {isCreating ? 'Accessing Chain...' : 'Create Market'}
-                                    </button>
-                                </div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-[#15171e] w-full max-w-2xl rounded-2xl border border-gray-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+                        {/* Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#1e212b]">
+                            <div className="flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-gray-300">
+                                <Wrench className="w-4 h-4" />
+                                Developer Tools
                             </div>
-                        )}
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="text-gray-500 hover:text-white transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
 
-                        {/* Oracle Tools Section */}
-                        {activeTab === 'oracle' && (
-                            <div className="bg-[#1e212b] border border-gray-800 rounded-xl p-6">
-                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        {/* Modal Content */}
+                        <div className="p-6 max-h-[80vh] overflow-y-auto">
+                            {/* Tabs */}
+                            <div className="flex space-x-1 bg-[#0f1115] p-1 rounded-xl mb-6">
+                                <button
+                                    onClick={() => setActiveTab('create')}
+                                    className={clsx(
+                                        "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all font-medium text-sm",
+                                        activeTab === 'create'
+                                            ? "bg-[#1e212b] text-blue-400 shadow-sm"
+                                            : "text-gray-500 hover:text-gray-300 hover:bg-[#1e212b]/50"
+                                    )}
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Create Market
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('oracle')}
+                                    className={clsx(
+                                        "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all font-medium text-sm",
+                                        activeTab === 'oracle'
+                                            ? "bg-[#1e212b] text-yellow-500 shadow-sm"
+                                            : "text-gray-500 hover:text-gray-300 hover:bg-[#1e212b]/50"
+                                    )}
+                                >
                                     <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                                    Oracle Tools (Resolve Market)
-                                </h3>
+                                    Oracle Tools
+                                </button>
+                            </div>
 
-                                <div className="space-y-4 max-w-2xl">
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Select Market to Resolve</label>
-                                        <select
-                                            className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-yellow-500 outline-none"
-                                            value={selectedMarketId || ""}
-                                            onChange={e => {
-                                                setSelectedMarketId(Number(e.target.value));
-                                                setSelectedWinnerIndex(0);
-                                            }}
-                                        >
-                                            <option value="" disabled>Select a market</option>
-                                            {contracts
-                                                .filter(contract => !contract.resolved)
-                                                .map(contract => (
-                                                    <option key={contract.id} value={contract.id}>
-                                                        {contract.name} ({contract.address.slice(0, 8)}...)
-                                                    </option>
-                                                ))}
-                                            {contracts.filter(c => !c.resolved).length === 0 && (
-                                                <option value="" disabled>No unresolved markets</option>
-                                            )}
-                                        </select>
-                                    </div>
-
-                                    {selectedMarket && (
+                            {/* Create Market Section */}
+                            {activeTab === 'create' && (
+                                <div className="space-y-5">
+                                    <div className="space-y-4">
                                         <div>
-                                            <label className="block text-sm text-gray-400 mb-2">Select Winning Outcome</label>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                {selectedMarketOptions.map((opt: string, idx: number) => (
-                                                    <button
-                                                        key={idx}
-                                                        onClick={() => setSelectedWinnerIndex(idx)}
-                                                        className={clsx(
-                                                            "px-3 py-2 rounded-lg text-sm font-bold border transition-all text-center",
-                                                            selectedWinnerIndex === idx
-                                                                ? "bg-yellow-500/10 border-yellow-500 text-white"
-                                                                : "bg-[#2c303b] border-transparent text-gray-400 hover:bg-[#363b47]"
-                                                        )}
-                                                    >
-                                                        {opt}
-                                                    </button>
-                                                ))}
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Market Question</label>
+                                            <input className="w-full bg-[#1e212b] border border-gray-800 focus:border-blue-500/50 rounded-lg p-3 text-white outline-none transition-colors"
+                                                value={newContractName}
+                                                onChange={e => setNewContractName(e.target.value)}
+                                                placeholder="e.g. Who will win the 2026 World Cup?"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Category</label>
+                                                <select
+                                                    className="w-full bg-[#1e212b] border border-gray-800 focus:border-blue-500/50 rounded-lg p-3 text-white outline-none transition-colors appearance-none"
+                                                    value={selectedCategoryId || ""}
+                                                    onChange={e => setSelectedCategoryId(Number(e.target.value))}
+                                                >
+                                                    <option value="" disabled>Select Category</option>
+                                                    {categories
+                                                        .filter(c => c.name !== "All" && c.name !== "New")
+                                                        .map(cat => (
+                                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                                        ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">End Date</label>
+                                                <div className="relative datepicker-dark">
+                                                    <DatePicker
+                                                        selected={newContractEndDate}
+                                                        onChange={(date: Date | null) => setNewContractEndDate(date)}
+                                                        showTimeSelect
+                                                        timeFormat="HH:mm"
+                                                        timeIntervals={15}
+                                                        timeCaption="Time"
+                                                        dateFormat="MMM d, yyyy HH:mm"
+                                                        minDate={new Date()}
+                                                        placeholderText="Optional"
+                                                        className="w-full bg-[#1e212b] border border-gray-800 focus:border-blue-500/50 rounded-lg p-3 text-white outline-none cursor-pointer transition-colors"
+                                                        calendarClassName="dark-calendar"
+                                                        wrapperClassName="w-full"
+                                                        popperPlacement="bottom-end"
+                                                    />
+                                                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                                </div>
                                             </div>
                                         </div>
-                                    )}
 
-                                    {selectedMarket && (
-                                        <div className="bg-[#1a1d26] p-3 rounded-lg border border-gray-800 text-sm">
-                                            <p className="text-gray-400">
-                                                <span className="text-yellow-500 font-bold">⚠ Warning:</span> Resolving a market is irreversible.
-                                                Winners will be able to claim their rewards after resolution.
-                                            </p>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Outcomes</label>
+                                            <div className="space-y-2">
+                                                {newContractOptions.map((opt, idx) => (
+                                                    <div key={idx} className="flex gap-2">
+                                                        <input
+                                                            className="flex-1 bg-[#1e212b] border border-gray-800 focus:border-blue-500/50 rounded-lg p-3 text-white outline-none transition-colors"
+                                                            value={opt}
+                                                            onChange={e => updateOption(idx, e.target.value)}
+                                                            placeholder={`Option ${idx + 1}`}
+                                                        />
+                                                        {newContractOptions.length > 2 && (
+                                                            <button
+                                                                onClick={() => removeOption(idx)}
+                                                                className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    onClick={addOption}
+                                                    className="w-full py-2 border border-dashed border-gray-700 text-gray-400 hover:text-blue-400 hover:border-blue-400/50 rounded-lg text-sm font-medium transition-all"
+                                                >
+                                                    + Add Option
+                                                </button>
+                                            </div>
                                         </div>
-                                    )}
 
-                                    <button
-                                        onClick={handleResolveMarket}
-                                        disabled={isResolving || !selectedMarket}
-                                        className={clsx(
-                                            "w-full py-3 rounded-lg text-white font-bold transition-colors mt-2",
-                                            isResolving || !selectedMarket
-                                                ? "bg-yellow-800 cursor-not-allowed opacity-60"
-                                                : "bg-yellow-600 hover:bg-yellow-500"
-                                        )}
-                                    >
-                                        {isResolving ? 'Resolving...' : 'Resolve Market'}
-                                    </button>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Description</label>
+                                            <textarea className="w-full bg-[#1e212b] border border-gray-800 focus:border-blue-500/50 rounded-lg p-3 text-white outline-none transition-colors resize-none"
+                                                value={newContractDesc} onChange={e => setNewContractDesc(e.target.value)} rows={2} placeholder="Optional market details..." />
+                                        </div>
+
+                                        <button
+                                            onClick={handleCreateMarket}
+                                            disabled={isCreating}
+                                            className={`w-full py-3.5 rounded-lg text-white font-bold transition-all shadow-lg ${isCreating
+                                                ? 'bg-blue-600/50 cursor-not-allowed'
+                                                : 'bg-blue-600 hover:bg-blue-500 hover:shadow-blue-600/20'
+                                                }`}
+                                        >
+                                            {isCreating ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                    Creating...
+                                                </span>
+                                            ) : 'Create Market'}
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+
+                            {/* Oracle Tools Section */}
+                            {activeTab === 'oracle' && (
+                                <div className="space-y-6">
+                                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 flex gap-3 text-sm text-yellow-200">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-2 shrink-0" />
+                                        <p>
+                                            Use this tool to resolve markets on the devnet. In a production environment, this would be handled by a decentralized oracle network.
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Select Market to Resolve</label>
+                                            <select
+                                                className="w-full bg-[#1e212b] border border-gray-800 focus:border-yellow-500/50 rounded-lg p-3 text-white outline-none transition-colors"
+                                                value={selectedMarketId || ""}
+                                                onChange={e => {
+                                                    setSelectedMarketId(Number(e.target.value));
+                                                    setSelectedWinnerIndex(0);
+                                                }}
+                                            >
+                                                <option value="" disabled>Select a market</option>
+                                                {contracts
+                                                    .filter(contract => !contract.resolved)
+                                                    .map(contract => (
+                                                        <option key={contract.id} value={contract.id}>
+                                                            {contract.name}
+                                                        </option>
+                                                    ))}
+                                                {contracts.filter(c => !c.resolved).length === 0 && (
+                                                    <option value="" disabled>No unresolved markets</option>
+                                                )}
+                                            </select>
+                                        </div>
+
+                                        {selectedMarket && (
+                                            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">Select Winner</label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {selectedMarketOptions.map((opt: string, idx: number) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => setSelectedWinnerIndex(idx)}
+                                                            className={clsx(
+                                                                "px-4 py-3 rounded-lg text-sm font-bold border transition-all text-center relative overflow-hidden",
+                                                                selectedWinnerIndex === idx
+                                                                    ? "bg-yellow-500/10 border-yellow-500 text-yellow-500"
+                                                                    : "bg-[#1e212b] border-gray-800 text-gray-400 hover:border-gray-600 hover:text-gray-200"
+                                                            )}
+                                                        >
+                                                            {opt}
+                                                            {selectedWinnerIndex === idx && (
+                                                                <div className="absolute inset-0 bg-yellow-500/5 pointer-events-none" />
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <button
+                                            onClick={handleResolveMarket}
+                                            disabled={isResolving || !selectedMarket}
+                                            className={clsx(
+                                                "w-full py-3.5 rounded-lg text-white font-bold transition-all mt-4 shadow-lg",
+                                                isResolving || !selectedMarket
+                                                    ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+                                                    : "bg-yellow-600 hover:bg-yellow-500 hover:shadow-yellow-600/20"
+                                            )}
+                                        >
+                                            {isResolving ? 'Processing on-chain...' : 'Resolve Market'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 }
