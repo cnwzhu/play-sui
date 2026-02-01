@@ -329,7 +329,7 @@ function App() {
                   </h1>
                   <div className="flex items-center gap-3 text-sm text-gray-400">
                     <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-xs font-bold uppercase">Sports</span>
-                    <span>Vol. $1.2m</span>
+                    <span>Vol. {(selectedContract.total_volume * 1_000_000_000).toFixed(0)} MIST</span>
                     <span>Ends 2026</span>
                   </div>
                 </div>

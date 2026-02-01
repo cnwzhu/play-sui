@@ -22,8 +22,11 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
         : ["Yes", "No"];
 
     // Real data from backend
-    // total_volume is in SUI
-    const volume = `$${contract.total_volume.toLocaleString(undefined, { maximumFractionDigits: 2 })} Vol.`;
+    // total_volume is in SUI, convert to MIST for display
+    const volumeInMist = contract.total_volume * 1_000_000_000;
+    const volume = volumeInMist >= 1000
+        ? `${(volumeInMist / 1000).toFixed(1)}K MIST`
+        : `${volumeInMist.toFixed(0)} MIST`;
 
     // Parse odds directly from backend or calculate default
     let prices: number[] = [];
