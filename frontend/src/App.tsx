@@ -16,6 +16,7 @@ interface Contract {
   category_id?: number;
   total_volume: number;
   outcome_odds?: string;
+  end_date?: string;
 }
 
 interface Category {
@@ -38,7 +39,7 @@ function App() {
 
   // Betting State
   const [outcome, setOutcome] = useState<number>(0);
-  const [amount, setAmount] = useState<string>("1000000000"); // 1 SUI
+  const [amount, setAmount] = useState<string>("10"); // 10 MIST
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Data State
@@ -57,6 +58,7 @@ function App() {
   const [newContractDesc, setNewContractDesc] = useState("");
   const [newContractOptions, setNewContractOptions] = useState<string[]>(["Yes", "No"]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [newContractEndDate, setNewContractEndDate] = useState<string>("");
 
   const [isCreating, setIsCreating] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -131,7 +133,7 @@ function App() {
   };
 
   // Helper to save to backend (Now capable of triggering creation too)
-  const createMarketBackend = async (name: string, desc: string, options: string[], categoryId: number | null) => {
+  const createMarketBackend = async (name: string, desc: string, options: string[], categoryId: number | null, endDate: string) => {
     const res = await fetch('http://localhost:3000/contracts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -141,6 +143,7 @@ function App() {
         description: desc,
         options: options,
         category_id: categoryId,
+        end_date: endDate || null,
       })
     });
     if (!res.ok) throw new Error("Backend failed to create market");
@@ -163,7 +166,7 @@ function App() {
     setIsCreating(true);
 
     try {
-      const newContract = await createMarketBackend(newContractName, newContractDesc, optionsArray, selectedCategoryId);
+      const newContract = await createMarketBackend(newContractName, newContractDesc, optionsArray, selectedCategoryId, newContractEndDate);
       setContracts(prev => [...prev, newContract]);
       setShowCreateModal(false);
       resetForm();
@@ -182,6 +185,7 @@ function App() {
     setNewContractDesc("");
     setNewContractOptions(["Yes", "No"]);
     setSelectedCategoryId(null);
+    setNewContractEndDate("");
   };
 
   const placeBet = () => {
@@ -328,9 +332,15 @@ function App() {
                     {selectedContract.name}
                   </h1>
                   <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-xs font-bold uppercase">Sports</span>
+                    <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-xs font-bold uppercase">
+                      {categories.find(c => c.id === selectedContract.category_id)?.name || 'Uncategorized'}
+                    </span>
                     <span>Vol. {(selectedContract.total_volume * 1_000_000_000).toFixed(0)} MIST</span>
-                    <span>Ends 2026</span>
+                    <span>
+                      {selectedContract.end_date
+                        ? `Ends ${new Date(selectedContract.end_date).toLocaleDateString()}`
+                        : 'No end date'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -408,6 +418,29 @@ function App() {
                     </div>
                   </div>
 
+                  {/* Platform Fee Display */}
+                  {amount && parseFloat(amount) > 0 && (
+                    <div className="space-y-2 bg-[#1a1d26]/50 p-3 rounded-lg border border-gray-800">
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>Your Bet</span>
+                        <span className="font-mono">{amount} MIST</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>Platform Fee (2%)</span>
+                        <span className="font-mono text-yellow-500">
+                          -{Math.floor(parseFloat(amount) * 0.02)} MIST
+                        </span>
+                      </div>
+                      <div className="h-px bg-gray-700" />
+                      <div className="flex justify-between text-sm font-bold text-white">
+                        <span>Into Pool</span>
+                        <span className="font-mono text-blue-400">
+                          {Math.floor(parseFloat(amount) * 0.98)} MIST
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Action Button */}
                   {!account ? (
                     <ConnectButton
@@ -425,7 +458,7 @@ function App() {
 
                   <div className="flex items-start gap-2 text-xs text-gray-500 bg-[#1a1d26] p-3 rounded-lg">
                     <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                    <p>Funds held in contract until resolution. Winners share the pool.</p>
+                    <p>A 2% platform fee is deducted from your bet. Remaining funds held in contract until resolution. Winners share the pool.</p>
                   </div>
                 </div>
               </div>
@@ -495,6 +528,16 @@ function App() {
                 <label className="block text-sm text-gray-400 mb-1">Description (Optional)</label>
                 <textarea className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
                   value={newContractDesc} onChange={e => setNewContractDesc(e.target.value)} rows={3} />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">End Date (Optional)</label>
+                <input
+                  type="date"
+                  className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
+                  value={newContractEndDate}
+                  onChange={e => setNewContractEndDate(e.target.value)}
+                />
               </div>
 
               <div className="flex gap-3 pt-2">

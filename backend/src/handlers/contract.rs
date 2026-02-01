@@ -26,6 +26,7 @@ pub struct CreateContract {
     pub description: Option<String>,
     pub options: Option<Vec<String>>,
     pub category_id: Option<i32>,
+    pub end_date: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -94,6 +95,7 @@ pub async fn create_contract(
         description: Set(payload.description),
         options: Set(options_json),
         category_id: Set(payload.category_id),
+        end_date: Set(payload.end_date),
         ..Default::default()
     };
 
@@ -163,6 +165,15 @@ async fn create_market_on_chain(
     let pure_question = bcs::to_bytes(&question.as_bytes().to_vec())?;
     let pure_options_count = bcs::to_bytes(&options_count)?;
     let pure_oracle = bcs::to_bytes(&sender)?;
+    let platform_fee_bps: u16 = 200; // 2% platform fee
+    let pure_platform_fee_bps = bcs::to_bytes(&platform_fee_bps)?;
+
+    // Load platform admin address from environment
+    let platform_admin_str =
+        std::env::var("PLATFORM_ADMIN_ADDRESS").unwrap_or_else(|_| sender.to_string()); // Fallback to sender if not set
+    let platform_admin = sui_sdk::types::base_types::SuiAddress::from_str(&platform_admin_str)
+        .map_err(|e| format!("Invalid PLATFORM_ADMIN_ADDRESS: {}", e))?;
+    let pure_platform_admin = bcs::to_bytes(&platform_admin)?;
 
     // 4. Construct Transaction
     // Get gas object (Pick first available coin with enough balance)
@@ -200,6 +211,8 @@ async fn create_market_on_chain(
             CallArg::Pure(pure_question),
             CallArg::Pure(pure_options_count),
             CallArg::Pure(pure_oracle),
+            CallArg::Pure(pure_platform_fee_bps),
+            CallArg::Pure(pure_platform_admin),
         ],
         gas_budget,
         gas_price,

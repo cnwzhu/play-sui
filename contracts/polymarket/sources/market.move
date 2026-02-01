@@ -4,7 +4,6 @@ module polymarket::market {
     use sui::balance::{Self, Balance};
     use sui::event;
     use sui::table::{Self, Table};
-    use std::vector;
 
     // --- Errors ---
     const EMarketAlreadyResolved: u64 = 0;
@@ -12,6 +11,8 @@ module polymarket::market {
     const EInvalidOutcome: u64 = 2;
     const ENotAuthorized: u64 = 3;
     const ENoWinnings: u64 = 4;
+    const EInvalidPlatformFee: u64 = 5;
+    const ENoFees: u64 = 6;
 
     // --- Structs ---
 
@@ -29,6 +30,11 @@ module polymarket::market {
         
         // Oracle who can resolve this market
         oracle: address,
+        
+        // Platform fee configuration
+        platform_fee_bps: u16,        // Platform fee rate in basis points (1% = 100)
+        platform_balance: Balance<SUI>, // Accumulated platform fees
+        platform_admin: address,       // Platform admin who can withdraw fees
     }
 
     /// A receipt/ticket representing a bet. 
@@ -52,6 +58,8 @@ module polymarket::market {
         better: address,
         outcome: u8,
         amount: u64,
+        platform_fee: u64,          // Platform fee deducted
+        amount_in_pool: u64,        // Amount that went into the pool
         // Snapshot of the pool after this bet
         pool_amounts: vector<u64>, 
         total_supply: u64
@@ -69,9 +77,12 @@ module polymarket::market {
         question: vector<u8>,
         options_count: u8,
         oracle: address,
+        platform_fee_bps: u16,      // Platform fee in basis points (e.g., 200 = 2%)
+        platform_admin: address,     // Platform admin address
         ctx: &mut TxContext
     ) {
         assert!(options_count > 1, EInvalidOutcome);
+        assert!(platform_fee_bps <= 1000, EInvalidPlatformFee); // Max 10% fee
 
         let mut outcome_balances = table::new<u8, Balance<SUI>>(ctx);
         let mut total_stakes = vector::empty<u64>();
@@ -92,6 +103,9 @@ module polymarket::market {
             winner: option::none(),
             outcome_balances,
             oracle,
+            platform_fee_bps,
+            platform_balance: balance::zero<SUI>(),
+            platform_admin,
         };
 
         event::emit(MarketCreated {
@@ -115,23 +129,34 @@ module polymarket::market {
         assert!(!market.resolved, EMarketAlreadyResolved);
         assert!(outcome < market.options_count, EInvalidOutcome);
 
-        let amount = coin::value(&payment);
-        let coin_balance = coin::into_balance(payment);
+        let total_amount = coin::value(&payment);
+        
+        // Calculate platform fee
+        let platform_fee = ((total_amount as u128) * (market.platform_fee_bps as u128) / 10000) as u64;
+        let amount_in_pool = total_amount - platform_fee;
+        
+        let mut coin_balance = coin::into_balance(payment);
+        
+        // Split platform fee from payment
+        if (platform_fee > 0) {
+            let fee_balance = balance::split(&mut coin_balance, platform_fee);
+            balance::join(&mut market.platform_balance, fee_balance);
+        };
 
-        // Update balance
+        // Update balance with remaining amount
         let balance_ref = table::borrow_mut(&mut market.outcome_balances, outcome);
         balance::join(balance_ref, coin_balance);
 
-        // Update stakes record
+        // Update stakes record with amount that went into pool
         let current_stake = *vector::borrow(&market.total_stakes, (outcome as u64));
         let chunk_ref = vector::borrow_mut(&mut market.total_stakes, (outcome as u64));
-        *chunk_ref = current_stake + amount;
+        *chunk_ref = current_stake + amount_in_pool;
 
         let receipt = BetReceipt {
             id: object::new(ctx),
             market_id: object::id(market),
             outcome,
-            amount,
+            amount: amount_in_pool,  // Receipt reflects actual pool amount
         };
 
         // Calculate total supply for event
@@ -147,12 +172,28 @@ module polymarket::market {
             market_id: object::id(market),
             better: tx_context::sender(ctx),
             outcome,
-            amount,
+            amount: total_amount,
+            platform_fee,
+            amount_in_pool,
             pool_amounts: market.total_stakes,
             total_supply
         });
 
         transfer::public_transfer(receipt, tx_context::sender(ctx));
+    }
+
+    /// Withdraw accumulated platform fees (Platform admin only)
+    public entry fun withdraw_platform_fees(
+        market: &mut Market,
+        ctx: &mut TxContext
+    ) {
+        assert!(tx_context::sender(ctx) == market.platform_admin, ENotAuthorized);
+        let amount = balance::value(&market.platform_balance);
+        assert!(amount > 0, ENoFees);
+        
+        let fees = balance::withdraw_all(&mut market.platform_balance);
+        let coin_payment = coin::from_balance(fees, ctx);
+        transfer::public_transfer(coin_payment, tx_context::sender(ctx));
     }
 
     /// Resolve the market (Oracle only)

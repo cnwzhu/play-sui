@@ -14,6 +14,7 @@ pub struct Model {
     #[sea_orm(default_value = "0.0")]
     pub total_volume: f64,
     pub outcome_odds: Option<String>, // JSON string containing odds/prices
+    pub end_date: Option<String>,     // ISO date string
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
