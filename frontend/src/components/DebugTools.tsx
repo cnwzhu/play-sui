@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Plus, Trash2, Wrench, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Wrench, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import clsx from 'clsx';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface Category {
     id: number;
@@ -30,7 +32,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
     const [newContractDesc, setNewContractDesc] = useState("");
     const [newContractOptions, setNewContractOptions] = useState<string[]>(["Yes", "No"]);
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-    const [newContractEndDate, setNewContractEndDate] = useState<string>("");
+    const [newContractEndDate, setNewContractEndDate] = useState<Date | null>(null);
 
     // Oracle Tools State
     const [selectedMarketId, setSelectedMarketId] = useState<number | null>(null);
@@ -143,7 +145,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
         setIsCreating(true);
 
         try {
-            const newContract = await createMarketBackend(newContractName, newContractDesc, optionsArray, selectedCategoryId, newContractEndDate);
+            const newContract = await createMarketBackend(newContractName, newContractDesc, optionsArray, selectedCategoryId, newContractEndDate ? newContractEndDate.toISOString() : "");
             onMarketCreated(newContract);
 
             // Reset Form
@@ -151,7 +153,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
             setNewContractDesc("");
             setNewContractOptions(["Yes", "No"]);
             setSelectedCategoryId(null);
-            setNewContractEndDate("");
+            setNewContractEndDate(null);
 
             alert("Market created successfully (by Admin Backend)!");
         } catch (e) {
@@ -248,13 +250,26 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
                             </div>
 
                             <div>
-                                <label className="block text-sm text-gray-400 mb-1">End Date (Optional)</label>
-                                <input
-                                    type="date"
-                                    className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none"
-                                    value={newContractEndDate}
-                                    onChange={e => setNewContractEndDate(e.target.value)}
-                                />
+                                <label className="block text-sm text-gray-400 mb-1">End Date & Time (Optional)</label>
+                                <div className="relative datepicker-dark">
+                                    <DatePicker
+                                        selected={newContractEndDate}
+                                        onChange={(date: Date | null) => setNewContractEndDate(date)}
+                                        showTimeSelect
+                                        timeFormat="HH:mm"
+                                        timeIntervals={15}
+                                        timeCaption="Time"
+                                        dateFormat="yyyy-MM-dd HH:mm"
+                                        minDate={new Date()}
+                                        placeholderText="Select end date and time"
+                                        className="w-full bg-[#242832] border border-gray-700 rounded-lg p-2 text-white focus:border-blue-500 outline-none cursor-pointer"
+                                        calendarClassName="dark-calendar"
+                                        wrapperClassName="w-full"
+                                        popperPlacement="top-start"
+                                        showPopperArrow={false}
+                                    />
+                                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                </div>
                             </div>
 
                             <button
