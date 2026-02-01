@@ -61,6 +61,14 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
         ? new Date(contract.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
         : null;
 
+    // Helper to format large numbers
+    const formatMist = (val: number) => {
+        if (val >= 1_000_000_000) return `${(val / 1_000_000_000).toFixed(1)}B`;
+        if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+        if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
+        return val.toFixed(0);
+    };
+
     return (
         <div
             onClick={() => onClick(contract)}
@@ -85,25 +93,30 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                 </div>
 
                 {/* Outcomes / Odds */}
-                <div className="space-y-2 mt-4">
+                <div className="space-y-3 mt-4">
                     {isBinary ? (
                         // Binary Layout (Yes/No rows)
                         <>
                             <div className="flex items-center justify-between group/row">
-                                <span className={`text-sm font-medium flex items-center gap-1 ${winnerIndex === 0 ? 'text-green-400' : 'text-gray-300'}`}>
+                                <span className={`text-sm font-medium flex items-center gap-2 ${winnerIndex === 0 ? 'text-green-400' : 'text-gray-300'}`}>
                                     {winnerIndex === 0 && <CheckCircle className="w-4 h-4" />}
                                     {options[0]}
-                                    {winnerIndex === 0 && <span className="text-xs">(Winner)</span>}
+                                    {winnerIndex === 0 && <span className="text-xs font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-green-400">WIN</span>}
                                 </span>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-green-400 font-bold">{percentages[0]}%</span>
+                                    <div className="text-right flex flex-col justify-center">
+                                        <div className="text-green-400 font-bold leading-none text-sm">{percentages[0]}%</div>
+                                        <div className="text-[10px] text-gray-500 font-mono leading-none mt-1 opacity-75">
+                                            {formatMist(prices[0] * volumeInMist)}
+                                        </div>
+                                    </div>
                                     {!isResolved && (
                                         <div
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onClick(contract, 0);
                                             }}
-                                            className="px-3 py-1.5 rounded bg-[#1a3a3a] text-[#00c99b] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#00c99b] group-hover/row:text-black transition-colors"
+                                            className="px-3 py-1.5 rounded-lg bg-[#1a3a3a] border border-[#00c99b]/20 text-[#00c99b] text-[10px] font-bold uppercase tracking-wider hover:bg-[#00c99b] hover:text-black hover:border-transparent transition-all min-w-[70px] text-center"
                                         >
                                             Buy Yes
                                         </div>
@@ -111,20 +124,25 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                                 </div>
                             </div>
                             <div className="flex items-center justify-between group/row">
-                                <span className={`text-sm font-medium flex items-center gap-1 ${winnerIndex === 1 ? 'text-green-400' : 'text-gray-300'}`}>
+                                <span className={`text-sm font-medium flex items-center gap-2 ${winnerIndex === 1 ? 'text-green-400' : 'text-gray-300'}`}>
                                     {winnerIndex === 1 && <CheckCircle className="w-4 h-4" />}
                                     {options[1]}
-                                    {winnerIndex === 1 && <span className="text-xs">(Winner)</span>}
+                                    {winnerIndex === 1 && <span className="text-xs font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-green-400">WIN</span>}
                                 </span>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-red-400 font-bold">{percentages[1]}%</span>
+                                    <div className="text-right flex flex-col justify-center">
+                                        <div className="text-red-400 font-bold leading-none text-sm">{percentages[1]}%</div>
+                                        <div className="text-[10px] text-gray-500 font-mono leading-none mt-1 opacity-75">
+                                            {formatMist(prices[1] * volumeInMist)}
+                                        </div>
+                                    </div>
                                     {!isResolved && (
                                         <div
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onClick(contract, 1);
                                             }}
-                                            className="px-3 py-1.5 rounded bg-[#3a1a1a] text-[#ff4d4d] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#ff4d4d] group-hover/row:text-white transition-colors"
+                                            className="px-3 py-1.5 rounded-lg bg-[#3a1a1a] border border-[#ff4d4d]/20 text-[#ff4d4d] text-[10px] font-bold uppercase tracking-wider hover:bg-[#ff4d4d] hover:text-white hover:border-transparent transition-all min-w-[70px] text-center"
                                         >
                                             Buy No
                                         </div>
@@ -134,32 +152,37 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                         </>
                     ) : (
                         // Multi-option layout (Scrollable list - unified styling with dynamic colors)
-                        <div className="max-h-[80px] overflow-y-auto pr-2 space-y-2">
+                        <div className="max-h-[140px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                             {options.map((opt: string, idx: number) => {
                                 const textColors = ["text-blue-400", "text-red-400", "text-green-400", "text-yellow-400", "text-purple-400", "text-pink-400", "text-cyan-400", "text-orange-400"];
-                                const bgHoverColors = ["group-hover/row:bg-blue-600", "group-hover/row:bg-red-600", "group-hover/row:bg-green-600", "group-hover/row:bg-yellow-600", "group-hover/row:bg-purple-600", "group-hover/row:bg-pink-600", "group-hover/row:bg-cyan-600", "group-hover/row:bg-orange-600"];
+                                const bgHoverColors = ["hover:bg-blue-500", "hover:bg-red-500", "hover:bg-green-500", "hover:bg-yellow-500", "hover:bg-purple-500", "hover:bg-pink-500", "hover:bg-cyan-500", "hover:bg-orange-500"];
                                 const textColor = textColors[idx % textColors.length];
                                 const hoverBg = bgHoverColors[idx % bgHoverColors.length];
 
                                 const isWinner = winnerIndex === idx;
                                 return (
                                     <div key={idx} className="flex items-center justify-between group/row">
-                                        <span className={`text-sm font-medium truncate max-w-[50%] flex items-center gap-1 ${isWinner ? 'text-green-400' : 'text-gray-300'}`}>
+                                        <span className={`text-sm font-medium truncate max-w-[50%] flex items-center gap-2 ${isWinner ? 'text-green-400' : 'text-gray-300'}`}>
                                             {isWinner && <CheckCircle className="w-4 h-4 shrink-0" />}
                                             {opt}
-                                            {isWinner && <span className="text-xs">(Winner)</span>}
+                                            {isWinner && <span className="text-xs font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-green-400">WIN</span>}
                                         </span>
                                         <div className="flex items-center gap-3">
-                                            <span className={`${isWinner ? 'text-green-400' : textColor} font-bold text-sm`}>
-                                                {percentages[idx] || 0}%
-                                            </span>
+                                            <div className="text-right flex flex-col justify-center">
+                                                <div className={`${isWinner ? 'text-green-400' : textColor} font-bold text-sm leading-none`}>
+                                                    {percentages[idx] || 0}%
+                                                </div>
+                                                <div className="text-[10px] text-gray-500 font-mono leading-none mt-1 opacity-75">
+                                                    {formatMist((prices[idx] || 0) * volumeInMist)}
+                                                </div>
+                                            </div>
                                             {!isResolved && (
                                                 <div
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         onClick(contract, idx);
                                                     }}
-                                                    className={`px-3 py-1.5 rounded bg-[#2c303b] ${textColor} text-xs font-bold uppercase tracking-wider ${hoverBg} group-hover/row:text-white transition-colors`}
+                                                    className={`px-3 py-1.5 rounded-lg bg-[#2c303b] border border-gray-700 ${textColor} text-[10px] font-bold uppercase tracking-wider ${hoverBg} hover:text-white hover:border-transparent transition-all min-w-[70px] text-center`}
                                                 >
                                                     Buy {opt}
                                                 </div>

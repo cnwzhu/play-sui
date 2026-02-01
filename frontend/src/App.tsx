@@ -52,7 +52,7 @@ function AppContent() {
 
   // Betting State
   const [outcome, setOutcome] = useState<number>(0);
-  const [amount, setAmount] = useState<string>("10"); // 10 MIST
+  const [amount, setAmount] = useState<string>("1000"); // 1000 MIST default to show visible fee
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Data State
@@ -245,14 +245,31 @@ function AppContent() {
     ? JSON.parse(selectedContract.options)
     : ["Yes", "No"];
 
-  // Backend filtering is now used
-  // But if "Favorites" category is selected (which is client-side concept for now, or mixed), handle it.
-  // Actually, let's treat "Favorites" as a local filter on top of "All" or as a special request?
-  // User asked for convenient filtering.
-  // Let's modify filteredContracts if activeCategory is "Favorites".
-  // But "Favorites" isn't in DB categories.
-  // We can add a "Favorites" tab manually.
+  /* Logic to calculate odds and volume for display in outcome buttons */
+  const currentOdds: number[] = (() => {
+    if (!selectedContract) return [];
+    let prices: number[] = [];
+    if (selectedContract.outcome_odds) {
+      try {
+        prices = JSON.parse(selectedContract.outcome_odds);
+      } catch (e) { console.error(e); }
+    }
+    if (prices.length !== currentOptions.length) {
+      prices = new Array(currentOptions.length).fill(1.0 / currentOptions.length);
+    }
+    return prices;
+  })();
 
+  const formatMistShort = (val: number) => {
+    if (val >= 1_000_000_000) return `${(val / 1_000_000_000).toFixed(1)}B`;
+    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+    if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
+    return val.toFixed(0);
+  };
+
+  const totalVolMist = selectedContract ? selectedContract.total_volume * 1_000_000_000 : 0;
+
+  // Backend filtering is now used
   const finalDisplayContracts = activeCategory === "Favorites"
     ? contracts.filter(c => favorites.includes(c.id))
     : contracts;
@@ -422,27 +439,37 @@ function AppContent() {
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-500 uppercase">Select Outcome</label>
                     <div className="grid grid-cols-2 gap-2">
-                      {currentOptions.map((opt: string, idx: number) => (
-                        <button
-                          key={idx}
-                          onClick={() => !selectedContract.resolved && setOutcome(idx)}
-                          disabled={selectedContract.resolved}
-                          className={clsx(
-                            "px-3 py-3 rounded-lg text-sm font-bold border transition-all text-center relative",
-                            selectedContract.resolved && selectedContract.winner === idx
-                              ? "bg-green-500/10 border-green-500 text-green-400"
-                              : selectedContract.resolved
-                                ? "bg-[#2c303b] border-transparent text-gray-500 cursor-not-allowed"
-                                : outcome === idx
-                                  ? "bg-blue-500/10 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.2)]"
-                                  : "bg-[#2c303b] border-transparent text-gray-400 hover:bg-[#363b47]"
-                          )}
-                        >
-                          {opt}
-                          {!selectedContract.resolved && outcome === idx && <CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-blue-500" />}
-                          {selectedContract.resolved && selectedContract.winner === idx && <CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-green-500" />}
-                        </button>
-                      ))}
+                      {currentOptions.map((opt: string, idx: number) => {
+                        // Calculate stats
+                        const price = currentOdds[idx] || 0;
+                        const percent = Math.round(price * 100);
+                        const mist = price * totalVolMist;
+
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => !selectedContract.resolved && setOutcome(idx)}
+                            disabled={selectedContract.resolved}
+                            className={clsx(
+                              "px-3 py-3 rounded-lg text-sm font-bold border transition-all text-center relative flex flex-col items-center justify-center gap-1 min-h-[4rem]",
+                              selectedContract.resolved && selectedContract.winner === idx
+                                ? "bg-green-500/10 border-green-500 text-green-400"
+                                : selectedContract.resolved
+                                  ? "bg-[#2c303b] border-transparent text-gray-500 cursor-not-allowed"
+                                  : outcome === idx
+                                    ? "bg-blue-500/10 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.2)]"
+                                    : "bg-[#2c303b] border-transparent text-gray-400 hover:bg-[#363b47]"
+                            )}
+                          >
+                            <span className="leading-tight">{opt}</span>
+                            <span className="text-[10px] font-mono opacity-60">
+                              {percent}% • {formatMistShort(mist)}
+                            </span>
+                            {!selectedContract.resolved && outcome === idx && <CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-blue-500" />}
+                            {selectedContract.resolved && selectedContract.winner === idx && <CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-green-500" />}
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
 
@@ -478,7 +505,8 @@ function AppContent() {
                           <div className="flex justify-between text-sm font-bold text-white">
                             <span>Into Pool</span>
                             <span className="font-mono text-blue-400">
-                              {Math.floor(parseFloat(amount) * 0.98)} MIST
+                              {/* Calculate Pool as Amount - Fee to ensure sum is correct (avoiding float precision issues like 10 * 0.98 = 9.8 -> 9) */}
+                              {Math.floor(parseFloat(amount)) - Math.floor(parseFloat(amount) * 0.02)} MIST
                             </span>
                           </div>
                         </div>

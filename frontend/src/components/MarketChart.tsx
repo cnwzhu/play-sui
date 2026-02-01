@@ -28,6 +28,7 @@ const MarketChart = ({ data, options }: MarketChartProps) => {
         const point: any = {
             date: new Date(d.timestamp).toLocaleDateString() + " " + new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             raw_timestamp: d.timestamp,
+            total_volume: d.total_volume || 0, // Ensure total_volume is passed
         };
 
         if (Array.isArray(prices)) {
@@ -37,6 +38,13 @@ const MarketChart = ({ data, options }: MarketChartProps) => {
         }
         return point;
     });
+
+    const formatMist = (val: number) => {
+        if (val >= 1_000_000_000) return `${(val / 1_000_000_000).toFixed(1)}B`;
+        if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+        if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
+        return val.toFixed(0);
+    };
 
     return (
         <div className="h-[300px] w-full mt-6">
@@ -69,7 +77,13 @@ const MarketChart = ({ data, options }: MarketChartProps) => {
                     <Tooltip
                         contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
                         itemStyle={{ color: '#fff' }}
-                        formatter={(value: any, name: any) => [`${value}%`, name]}
+                        formatter={(value: any, name: any, item: any) => {
+                            const totalVolumeSUI = item.payload.total_volume;
+                            const totalVolumeMIST = totalVolumeSUI * 1_000_000_000;
+                            const percentage = Number(value);
+                            const amount = (percentage / 100) * totalVolumeMIST;
+                            return [`${value}% (${formatMist(amount)} MIST)`, name];
+                        }}
                         labelStyle={{ color: '#9ca3af', marginBottom: '0.5rem' }}
                     />
                     <Legend />
