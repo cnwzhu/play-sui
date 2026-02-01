@@ -99,6 +99,12 @@ function AppContent() {
       .then(data => {
         setContracts(data);
         setLoading(false);
+        // Force update selectedContract if looking at one
+        setSelectedContract(prev => {
+          if (!prev) return null;
+          const fresh = data.find((c: Contract) => c.id === prev.id);
+          return fresh || prev;
+        });
       })
       .catch(err => {
         console.error("Failed to fetch contracts:", err);
