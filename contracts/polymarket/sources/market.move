@@ -12,6 +12,7 @@ module polymarket::market {
     const ENotAuthorized: u64 = 3;
     const EInvalidPlatformFee: u64 = 5;
     const ENoFees: u64 = 6;
+    const EMarketNotExpired: u64 = 7;
 
     // --- Structs ---
 
@@ -23,6 +24,8 @@ module polymarket::market {
         total_stakes: vector<u64>, // Index i = total stake for outcome i
         resolved: bool,
         winner: Option<u8>, // The winning option index
+        cancelled: bool,    // Market cancelled (refund mode)
+        end_time_ms: Option<u64>, // Optional end time (ms since epoch)
         
         // Escrow funds - stored in a Table for multiple outcomes
         outcome_balances: Table<u8, Balance<SUI>>,
@@ -69,6 +72,10 @@ module polymarket::market {
         winner: u8,
     }
 
+    public struct MarketCancelled has copy, drop {
+        market_id: ID,
+    }
+
     // --- Functions ---
 
     /// Create a new market
@@ -78,6 +85,7 @@ module polymarket::market {
         oracle: address,
         platform_fee_bps: u16,      // Platform fee in basis points (e.g., 200 = 2%)
         platform_admin: address,     // Platform admin address
+        end_time_ms: u64,           // 0 = no expiration, otherwise ms since epoch
         ctx: &mut TxContext
     ) {
         assert!(options_count > 1, EInvalidOutcome);
@@ -93,6 +101,12 @@ module polymarket::market {
             i = i + 1;
         };
 
+        let end_time_opt = if (end_time_ms == 0) {
+            option::none()
+        } else {
+            option::some(end_time_ms)
+        };
+
         let market = Market {
             id: object::new(ctx),
             question,
@@ -100,6 +114,8 @@ module polymarket::market {
             total_stakes,
             resolved: false,
             winner: option::none(),
+            cancelled: false,
+            end_time_ms: end_time_opt,
             outcome_balances,
             oracle,
             platform_fee_bps,
@@ -208,13 +224,47 @@ module polymarket::market {
         market.resolved = true;
         market.winner = option::some(winner);
 
+        market.cancelled = false; // Ensure cancelled is false when resolved normally
+
         event::emit(MarketResolved {
             market_id: object::id(market),
             winner,
         });
     }
 
-    /// Claim winnings
+    /// Cancel the market - refund all bets
+    /// Can be called by oracle anytime, or by anyone if market is expired
+    public entry fun cancel_market(
+        market: &mut Market,
+        clock: &sui::clock::Clock,
+        ctx: &mut TxContext
+    ) {
+        assert!(!market.resolved, EMarketAlreadyResolved);
+        
+        let sender = tx_context::sender(ctx);
+        let is_oracle = sender == market.oracle;
+        
+        // Check if expired (anyone can cancel expired markets)
+        let is_expired = if (option::is_some(&market.end_time_ms)) {
+            let end_time = *option::borrow(&market.end_time_ms);
+            sui::clock::timestamp_ms(clock) > end_time
+        } else {
+            false
+        };
+        
+        // Must be oracle OR market must be expired
+        assert!(is_oracle || is_expired, ENotAuthorized);
+        
+        market.resolved = true;
+        market.cancelled = true;
+        market.winner = option::none();
+
+        event::emit(MarketCancelled {
+            market_id: object::id(market),
+        });
+    }
+
+    /// Claim winnings or refund (if cancelled)
     public entry fun claim_reward(
         market: &mut Market,
         receipt: BetReceipt,
@@ -226,6 +276,20 @@ module polymarket::market {
         object::delete(id);
 
         assert!(market_id == object::id(market), EInvalidOutcome);
+
+        // If market was cancelled, refund original stake
+        if (market.cancelled) {
+            let pool_bal = table::borrow_mut(&mut market.outcome_balances, outcome);
+            let available = balance::value(pool_bal);
+            let refund_amount = if (available >= amount) { amount } else { available };
+            
+            if (refund_amount > 0) {
+                let payment = balance::split(pool_bal, refund_amount);
+                let coin_payment = coin::from_balance(payment, ctx);
+                transfer::public_transfer(coin_payment, tx_context::sender(ctx));
+            };
+            return
+        };
         
         let winner_idx = *option::borrow(&market.winner);
         let did_win = winner_idx == outcome;

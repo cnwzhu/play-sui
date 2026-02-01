@@ -207,13 +207,18 @@ pub async fn run_indexer(db: DatabaseConnection, mut rx: tokio::sync::mpsc::Rece
                             // 6. Update Contract Entity (Volume & Odds & Resolution Status)
                             // volume_sui is calculated above
 
-                            // Extract resolved and winner from chain
+                            // Extract resolved, cancelled, and winner from chain
                             let is_resolved = fields_json
                                 .get("resolved")
                                 .and_then(|v| v.as_bool())
                                 .unwrap_or(false);
 
-                            let winner_opt: Option<i32> = if is_resolved {
+                            let is_cancelled = fields_json
+                                .get("cancelled")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false);
+
+                            let winner_opt: Option<i32> = if is_resolved && !is_cancelled {
                                 fields_json
                                     .get("winner")
                                     .and_then(|v| v.as_u64())
@@ -226,6 +231,7 @@ pub async fn run_indexer(db: DatabaseConnection, mut rx: tokio::sync::mpsc::Rece
                             active_contract.total_volume = ActiveValue::Set(volume_sui);
                             active_contract.outcome_odds = ActiveValue::Set(Some(json_prices));
                             active_contract.resolved = ActiveValue::Set(is_resolved);
+                            active_contract.cancelled = ActiveValue::Set(is_cancelled);
                             active_contract.winner = ActiveValue::Set(winner_opt);
 
                             if let Err(e) = active_contract.update(&db).await {

@@ -15,9 +15,9 @@ pub struct Model {
     pub total_volume: f64,
     pub outcome_odds: Option<String>, // JSON string containing odds/prices
     pub end_date: Option<String>,     // ISO date string
-    #[sea_orm(default_value = "false")]
-    pub resolved: bool, // Whether market has been resolved by oracle
+    pub resolved: bool,               // Whether market has been resolved by oracle
     pub winner: Option<i32>,          // Winning option index (0, 1, 2, etc.)
+    pub cancelled: bool,              // Whether market was cancelled (refund mode)
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

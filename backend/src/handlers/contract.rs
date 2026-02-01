@@ -75,6 +75,7 @@ pub async fn create_contract(
         create_market_on_chain(
             &payload.name,
             payload.options.as_ref().map(|v| v.len()).unwrap_or(2) as u8,
+            payload.end_date.as_deref(),
         )
         .await
         .map_err(|e| {
@@ -96,6 +97,8 @@ pub async fn create_contract(
         options: Set(options_json),
         category_id: Set(payload.category_id),
         end_date: Set(payload.end_date),
+        resolved: Set(false),
+        cancelled: Set(false),
         ..Default::default()
     };
 
@@ -133,10 +136,11 @@ const SUI_NETWORK_URL: &str = "https://fullnode.testnet.sui.io:443";
 async fn create_market_on_chain(
     question: &str,
     options_count: u8,
+    end_date: Option<&str>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     println!(
-        "Creating market on chain... Question: {}, Options: {}",
-        question, options_count
+        "Creating market on chain... Question: {}, Options: {}, EndDate: {:?}",
+        question, options_count, end_date
     );
 
     // 1. Setup Client
@@ -180,6 +184,21 @@ async fn create_market_on_chain(
         .map_err(|e| format!("Invalid PLATFORM_ADMIN_ADDRESS: {}", e))?;
     let pure_platform_admin = bcs::to_bytes(&platform_admin)?;
 
+    // Convert end_date ISO string to milliseconds timestamp
+    let end_time_ms: u64 = if let Some(date_str) = end_date {
+        chrono::DateTime::parse_from_rfc3339(date_str)
+            .or_else(|_| {
+                // Try parsing as date only
+                chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+                    .map(|d| d.and_hms_opt(23, 59, 59).unwrap().and_utc().fixed_offset())
+            })
+            .map(|dt| dt.timestamp_millis() as u64)
+            .unwrap_or(0)
+    } else {
+        0 // No expiration
+    };
+    let pure_end_time_ms = bcs::to_bytes(&end_time_ms)?;
+
     // 4. Construct Transaction
     // Get gas object (Pick first available coin with enough balance)
     let coins = sui_client
@@ -218,6 +237,7 @@ async fn create_market_on_chain(
             CallArg::Pure(pure_oracle),
             CallArg::Pure(pure_platform_fee_bps),
             CallArg::Pure(pure_platform_admin),
+            CallArg::Pure(pure_end_time_ms),
         ],
         gas_budget,
         gas_price,

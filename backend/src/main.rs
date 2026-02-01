@@ -40,6 +40,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         cron::indexer::run_indexer(db_clone, rx).await;
     });
 
+    // Start Expired Markets Checker
+    let db_clone2 = db.clone();
+    tokio::spawn(async move {
+        cron::expired_checker::run_expired_checker(db_clone2).await;
+    });
+
     // App state
     #[allow(unused_mut)]
     let mut app = Router::new()
@@ -68,6 +74,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/favorites/{wallet}",
             get(handlers::favorite::get_favorites),
+        )
+        .route(
+            "/market/cancel",
+            axum::routing::post(handlers::cancel::cancel_market),
         );
 
     // Only serve static files in release mode

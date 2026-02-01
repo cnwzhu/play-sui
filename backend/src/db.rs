@@ -33,45 +33,6 @@ pub async fn init_db(db_url: &str) -> Result<DatabaseConnection, Box<dyn std::er
     db.execute(builder.build(&create_table_history)).await?;
     db.execute(builder.build(&create_table_favorite)).await?;
 
-    // Migration: Add new columns if they don't exist
-    // Check if the columns exist or simply try adding them (SQLite ignores if exists in some modes, but safer to catch error)
-    // For simplicity in this dev environment, we just try to add them and ignore errors
-    let _ = db
-        .execute(sea_orm::Statement::from_string(
-            DbBackend::Sqlite,
-            "ALTER TABLE contracts ADD COLUMN total_volume REAL DEFAULT 0;",
-        ))
-        .await;
-
-    let _ = db
-        .execute(sea_orm::Statement::from_string(
-            DbBackend::Sqlite,
-            "ALTER TABLE contracts ADD COLUMN outcome_odds TEXT;",
-        ))
-        .await;
-
-    let _ = db
-        .execute(sea_orm::Statement::from_string(
-            DbBackend::Sqlite,
-            "ALTER TABLE market_history ADD COLUMN total_volume REAL DEFAULT 0;",
-        ))
-        .await;
-
-    // Migration: Add resolved and winner columns for oracle resolution
-    let _ = db
-        .execute(sea_orm::Statement::from_string(
-            DbBackend::Sqlite,
-            "ALTER TABLE contracts ADD COLUMN resolved INTEGER DEFAULT 0;",
-        ))
-        .await;
-
-    let _ = db
-        .execute(sea_orm::Statement::from_string(
-            DbBackend::Sqlite,
-            "ALTER TABLE contracts ADD COLUMN winner INTEGER;",
-        ))
-        .await;
-
     // Seed Categories
     seed_categories(&db).await?;
 
