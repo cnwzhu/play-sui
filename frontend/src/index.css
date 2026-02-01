@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer base {
+
   /* Custom scrollbar for Webkit browsers (Chrome, Safari, Edge) */
   ::-webkit-scrollbar {
     width: 4px;
@@ -14,17 +15,38 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #374151; /* gray-700 */
+    background: #374151;
+    /* gray-700 */
     border-radius: 10px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #4b5563; /* gray-600 */
+    background: #4b5563;
+    /* gray-600 */
   }
 
   /* Firefox */
   * {
     scrollbar-width: thin;
     scrollbar-color: #374151 transparent;
+  }
+
+  /* Override Radix UI / dApp Kit Styles for Dark Theme */
+  [data-radix-popper-content-wrapper] .radix-themes {
+    background-color: #1a1d26 !important;
+    color: white !important;
+    border: 1px solid #374151 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  }
+
+  /* Target common class names often found in radix themes inside dApp Kit */
+  .radix-themes {
+    --color-panel-solid: #1a1d26 !important;
+    --color-surface: #242832 !important;
+    --gray-a2: #242832 !important;
+    /* backgrounds */
+    --gray-12: white !important;
+    /* text */
+    --radius-3: 12px !important;
   }
 }

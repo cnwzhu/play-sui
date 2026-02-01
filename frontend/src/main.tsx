@@ -17,13 +17,13 @@ const { networkConfig } = createNetworkConfig({
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
+	<React.StrictMode>
+		<QueryClientProvider client={queryClient}>
 			<SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
-				<WalletProvider>
+				<WalletProvider autoConnect>
 					<App />
 				</WalletProvider>
 			</SuiClientProvider>
 		</QueryClientProvider>
-  </React.StrictMode>,
+	</React.StrictMode>,
 )
