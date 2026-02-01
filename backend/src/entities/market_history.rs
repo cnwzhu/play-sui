@@ -7,8 +7,9 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub contract_id: i32,
-    pub timestamp: String, // storing as ISO string for simplicity in SQLite
+    pub timestamp: String,     // storing as ISO string for simplicity in SQLite
     pub option_prices: String, // JSON string: [0.5, 0.5] or {"Yes": 0.5, "No": 0.5}
+    pub total_volume: f64,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

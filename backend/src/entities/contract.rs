@@ -11,6 +11,9 @@ pub struct Model {
     pub description: Option<String>,
     pub options: Option<String>, // JSON string ["Option A", "Option B"]
     pub category_id: Option<i32>,
+    #[sea_orm(default_value = "0.0")]
+    pub total_volume: f64,
+    pub outcome_odds: Option<String>, // JSON string containing odds/prices
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

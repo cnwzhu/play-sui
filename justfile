@@ -41,15 +41,15 @@ dev-frontend:
 
 # Run the Rust backend
 backend-run:
-    cd backend && cargo run
+    export TMPDIR=/tmp && cd backend && cargo run
 
 # Check the Rust backend code
 backend-check:
-    cd backend && cargo check
+    export TMPDIR=/tmp && cd backend && cargo check
 
 # Build the Rust backend (Release)
 backend-build:
-    cd backend && cargo build --release
+    export TMPDIR=/tmp && cd backend && cargo build --release
 
 # --- Sui Account Management ---
 

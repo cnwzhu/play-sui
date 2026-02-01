@@ -6,6 +6,8 @@ interface Contract {
     address: string;
     description?: string;
     options?: string;
+    total_volume: number;
+    outcome_odds?: string;
 }
 
 interface MarketCardProps {
@@ -19,13 +21,27 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
         ? JSON.parse(contract.options)
         : ["Yes", "No"];
 
-    // Mock data for visuals (since backend doesn't store live odds in the list view yet)
-    const volume = "$1.2m Vol.";
+    // Real data from backend
+    // total_volume is in SUI
+    const volume = `$${contract.total_volume.toLocaleString(undefined, { maximumFractionDigits: 2 })} Vol.`;
 
-    // Create mock percentages for the first 2 options to look like the design
-    // In a real app, pass this data in
-    const mockPercent1 = Math.floor(Math.random() * 60) + 20;
-    const mockPercent2 = 100 - mockPercent1;
+    // Parse odds directly from backend or calculate default
+    let prices: number[] = [];
+    if (contract.outcome_odds) {
+        try {
+            prices = JSON.parse(contract.outcome_odds);
+        } catch (e) {
+            console.error("Failed to parse odds", e);
+        }
+    }
+
+    // Fallback if no odds: Equal probability
+    if (prices.length !== options.length) {
+        prices = new Array(options.length).fill(1.0 / options.length);
+    }
+
+    // Convert price (0.0-1.0) to percentage (0-100)
+    const percentages = prices.map(p => Math.round(p * 100));
 
     const isBinary = options.length === 2 && options.includes("Yes") && options.includes("No");
 
@@ -54,7 +70,7 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
                             <div className="flex items-center justify-between group/row">
                                 <span className="text-sm text-gray-300 font-medium">{options[0]}</span>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-green-400 font-bold">{mockPercent1}%</span>
+                                    <span className="text-green-400 font-bold">{percentages[0]}%</span>
                                     <div className="px-3 py-1.5 rounded bg-[#1a3a3a] text-[#00c99b] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#00c99b] group-hover/row:text-black transition-colors">
                                         Buy Yes
                                     </div>
@@ -63,7 +79,7 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
                             <div className="flex items-center justify-between group/row">
                                 <span className="text-sm text-gray-300 font-medium">{options[1]}</span>
                                 <div className="flex items-center gap-3">
-                                    <span className="text-red-400 font-bold">{mockPercent2}%</span>
+                                    <span className="text-red-400 font-bold">{percentages[1]}%</span>
                                     <div className="px-3 py-1.5 rounded bg-[#3a1a1a] text-[#ff4d4d] text-xs font-bold uppercase tracking-wider group-hover/row:bg-[#ff4d4d] group-hover/row:text-white transition-colors">
                                         Buy No
                                     </div>
@@ -80,18 +96,19 @@ export function MarketCard({ contract, onClick }: MarketCardProps) {
                                 const hoverBg = bgHoverColors[idx % bgHoverColors.length];
 
                                 return (
-                                <div key={idx} className="flex items-center justify-between group/row">
-                                    <span className="text-sm text-gray-300 font-medium truncate max-w-[50%]">{opt}</span>
-                                    <div className="flex items-center gap-3">
-                                        <span className={`${textColor} font-bold text-sm`}>
-                                            {Math.floor(100 / options.length) + (idx === 0 ? 10 : -2)}%
-                                        </span>
-                                        <div className={`px-3 py-1.5 rounded bg-[#2c303b] ${textColor} text-xs font-bold uppercase tracking-wider ${hoverBg} group-hover/row:text-white transition-colors`}>
-                                            Trade
+                                    <div key={idx} className="flex items-center justify-between group/row">
+                                        <span className="text-sm text-gray-300 font-medium truncate max-w-[50%]">{opt}</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className={`${textColor} font-bold text-sm`}>
+                                                {percentages[idx] || 0}%
+                                            </span>
+                                            <div className={`px-3 py-1.5 rounded bg-[#2c303b] ${textColor} text-xs font-bold uppercase tracking-wider ${hoverBg} group-hover/row:text-white transition-colors`}>
+                                                Trade
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )})}
+                                )
+                            })}
                         </div>
                     )}
                 </div>

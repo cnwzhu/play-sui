@@ -52,6 +52,9 @@ module polymarket::market {
         better: address,
         outcome: u8,
         amount: u64,
+        // Snapshot of the pool after this bet
+        pool_amounts: vector<u64>, 
+        total_supply: u64
     }
 
     public struct MarketResolved has copy, drop {
@@ -131,11 +134,22 @@ module polymarket::market {
             amount,
         };
 
+        // Calculate total supply for event
+        let mut total_supply: u64 = 0;
+        let mut i = 0;
+        while (i < market.options_count) {
+            let stake = *vector::borrow(&market.total_stakes, (i as u64));
+            total_supply = total_supply + stake;
+            i = i + 1;
+        };
+
         event::emit(BetPlaced {
             market_id: object::id(market),
             better: tx_context::sender(ctx),
             outcome,
             amount,
+            pool_amounts: market.total_stakes,
+            total_supply
         });
 
         transfer::public_transfer(receipt, tx_context::sender(ctx));

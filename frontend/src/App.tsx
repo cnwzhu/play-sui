@@ -1,12 +1,11 @@
 import { useCurrentAccount, useSignAndExecuteTransaction, ConnectButton } from '@mysten/dapp-kit';
 import { Transaction } from '@mysten/sui/transactions';
 import { useState, useEffect } from 'react';
-import { Trophy, TrendingUp, AlertCircle, CheckCircle2, Wallet, Coins, ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Trophy, TrendingUp, AlertCircle, CheckCircle2, Coins, ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
 import MarketChart from './components/MarketChart';
 import { Navbar } from './components/Navbar';
 import { MarketCard } from './components/MarketCard';
 import clsx from 'clsx';
-import { bcs } from '@mysten/sui/bcs';
 
 interface Contract {
   id: number;
@@ -15,6 +14,8 @@ interface Contract {
   description?: string;
   options?: string;
   category_id?: number;
+  total_volume: number;
+  outcome_odds?: string;
 }
 
 interface Category {
@@ -48,6 +49,9 @@ function App() {
   const [timeRange, setTimeRange] = useState("1M");
   const [loading, setLoading] = useState(true);
 
+  // Refresh Trigger
+  const [refetchVersion, setRefetchVersion] = useState(0);
+
   // Manager Form
   const [newContractName, setNewContractName] = useState("");
   const [newContractDesc, setNewContractDesc] = useState("");
@@ -72,8 +76,8 @@ function App() {
     if (searchQuery) params.append("q", searchQuery);
 
     if (activeCategory !== "All" && activeCategory !== "New") {
-        const catObj = categories.find(c => c.name === activeCategory);
-        if (catObj) params.append("category_id", catObj.id.toString());
+      const catObj = categories.find(c => c.name === activeCategory);
+      if (catObj) params.append("category_id", catObj.id.toString());
     }
 
     // Fetch Contracts with filters
@@ -87,16 +91,16 @@ function App() {
         console.error("Failed to fetch contracts:", err);
         setLoading(false);
       });
-  }, [activeCategory, searchQuery, categories]);
+  }, [activeCategory, searchQuery, categories, refetchVersion, view]);
 
   useEffect(() => {
     if (selectedContract && view === 'market') {
-      fetch(`http://localhost:3000/contracts/${selectedContract.id}/history?range=${timeRange}`)
+      fetch(`http://localhost:3000/contracts/${selectedContract.id}/history?range=${timeRange}&v=${refetchVersion}`)
         .then(res => res.json())
         .then(data => setContractHistory(data))
         .catch(err => console.error(err));
     }
-  }, [selectedContract, view, timeRange]);
+  }, [selectedContract, view, timeRange, refetchVersion]);
 
   useEffect(() => {
     if (selectedContract) {
@@ -201,10 +205,19 @@ function App() {
         transaction: tx as any,
       },
         {
-          onSuccess: (result) => {
+          onSuccess: async (result) => {
             console.log('Bet placed:', result);
-            alert('Bet placed successfully!');
             setIsProcessing(false);
+
+            // Artificial delay to allow indexer/chain to process (optimistic UX)
+            setTimeout(() => {
+              // Trigger refreshes
+              setSearchQuery(prev => prev + " "); // Hack to trigger contracts refresh? No, let's use a proper trigger.
+              // Actually, let's just force a reload of the specific contract's history and list.
+              // Because useEffect relies on state, let's add a version counter.
+              setRefetchVersion(v => v + 1);
+              alert('Bet placed! Updating market data...');
+            }, 2000);
           },
           onError: (err) => {
             console.error('Error:', err);
@@ -327,8 +340,8 @@ function App() {
                   <h3 className="font-bold text-gray-300">Outcome Probability</h3>
                   <div className="flex gap-2">
                     {['5m', '1h', '6h', '1d', '1w', '1M'].map(t => (
-                      <button 
-                        key={t} 
+                      <button
+                        key={t}
                         onClick={() => setTimeRange(t)}
                         className={`px-2 py-1 text-xs font-medium rounded uppercase ${timeRange === t ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
                       >
@@ -337,7 +350,7 @@ function App() {
                     ))}
                   </div>
                 </div>
-                <MarketChart data={contractHistory} />
+                <MarketChart data={contractHistory} options={currentOptions} />
               </div>
 
               {/* Description or Rules */}

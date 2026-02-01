@@ -1,35 +1,58 @@
 use axum::{
-    routing::{get, delete},
+    routing::{delete, get},
     Router,
 };
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 
+mod cron;
+mod db;
 mod entities;
 mod handlers;
-mod db;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
-    
+
     // Database setup
     let db_url = "sqlite://contracts.db?mode=rwc";
     let db = db::init_db(db_url).await?;
 
+    // Channel for instant indexer triggers
+    let (tx, rx) = tokio::sync::mpsc::channel::<()>(100);
+
+    // Start Indexer
+    let db_clone = db.clone();
+    tokio::spawn(async move {
+        cron::indexer::run_indexer(db_clone, rx).await;
+    });
+
     // App state
     let app = Router::new()
-        .route("/contracts", get(handlers::contract::list_contracts).post(handlers::contract::create_contract))
-        .route("/contracts/{id}", delete(handlers::contract::delete_contract))
-        .route("/contracts/{id}/history", get(handlers::market_history::get_contract_history))
+        .route(
+            "/contracts",
+            get(handlers::contract::list_contracts).post(handlers::contract::create_contract),
+        )
+        .route(
+            "/contracts/{id}",
+            delete(handlers::contract::delete_contract),
+        )
+        .route(
+            "/contracts/{id}/history",
+            get(handlers::market_history::get_contract_history),
+        )
         .route("/categories", get(handlers::category::list_categories))
-        .route("/oracle/resolve", axum::routing::post(handlers::oracle::resolve_market))
+        .route(
+            "/oracle/resolve",
+            axum::routing::post(handlers::oracle::resolve_market),
+        )
         .layer(CorsLayer::permissive())
-        .with_state(db);
+        .with_state(db)
+        .layer(axum::Extension(tx));
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     println!("listening on {}", addr);
-    
+
     axum::serve(tokio::net::TcpListener::bind(addr).await?, app)
         .with_graceful_shutdown(shutdown_signal())
         .await?;
