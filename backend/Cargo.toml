@@ -22,3 +22,5 @@ dotenvy = "0.15.7"
 bcs = "0.1.6"
 rand = "0.8"
 sui-keys = { git = "https://github.com/MystenLabs/sui.git", package = "sui-keys", tag = "mainnet-v1.64.2" }
+rust-embed = "8"
+mime_guess = "2"

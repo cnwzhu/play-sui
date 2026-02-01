@@ -139,6 +139,25 @@ dev-check:
 dev-build:
     export TMPDIR=/tmp && cd backend && cargo build --release
 
+# Build release binary with embedded frontend
+release:
+    #!/usr/bin/env bash
+    set -e
+    echo "📦 Building frontend..."
+    cd frontend && pnpm build
+    
+    echo ""
+    echo "🦀 Building backend (release mode with embedded frontend)..."
+    export TMPDIR=/tmp
+    cd ../backend && cargo build --release
+    
+    echo ""
+    echo "✅ Release build complete!"
+    echo "   Binary: backend/target/release/backend"
+    echo ""
+    echo "   Run with: ./backend/target/release/backend"
+    echo "   Then visit: http://localhost:3000"
+
 # --- Sui Account Management ---
 
 # Create a new Sui testnet account and request faucet funding

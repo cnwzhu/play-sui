@@ -1,7 +1,11 @@
 use axum::{
+    body::Body,
+    http::{header, StatusCode, Uri},
+    response::{IntoResponse, Response},
     routing::{delete, get},
     Router,
 };
+use rust_embed::Embed;
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 
@@ -9,6 +13,10 @@ mod cron;
 mod db;
 mod entities;
 mod handlers;
+
+#[derive(Embed)]
+#[folder = "../frontend/dist"]
+struct Assets;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -55,6 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/favorites/{wallet}",
             get(handlers::favorite::get_favorites),
         )
+        .fallback(static_handler)
         .layer(CorsLayer::permissive())
         .with_state(db)
         .layer(axum::Extension(tx));
@@ -91,4 +100,31 @@ async fn shutdown_signal() {
         _ = ctrl_c => {},
         _ = terminate => {},
     }
+}
+
+async fn static_handler(uri: Uri) -> impl IntoResponse {
+    let path = uri.path().trim_start_matches('/');
+
+    // Try to serve the requested file
+    if let Some(content) = Assets::get(path) {
+        let mime = mime_guess::from_path(path).first_or_octet_stream();
+        return Response::builder()
+            .header(header::CONTENT_TYPE, mime.as_ref())
+            .body(Body::from(content.data.into_owned()))
+            .unwrap();
+    }
+
+    // Fallback to index.html for SPA routing
+    if let Some(content) = Assets::get("index.html") {
+        return Response::builder()
+            .header(header::CONTENT_TYPE, "text/html")
+            .body(Body::from(content.data.into_owned()))
+            .unwrap();
+    }
+
+    // If no index.html, return 404
+    Response::builder()
+        .status(StatusCode::NOT_FOUND)
+        .body(Body::from("404 Not Found"))
+        .unwrap()
 }
