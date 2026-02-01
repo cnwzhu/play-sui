@@ -1,4 +1,3 @@
-use anyhow::Result;
 use axum::{
     extract::{Json, State},
     http::StatusCode,
@@ -7,16 +6,14 @@ use axum::{
 use sea_orm::DatabaseConnection;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use shared_crypto::intent::{Intent, IntentMessage};
+use shared_crypto::intent::Intent;
+use std::path::PathBuf;
 use std::str::FromStr;
+use sui_keys::keystore::{AccountKeystore, FileBasedKeystore};
 use sui_sdk::{
     json::SuiJsonValue,
     rpc_types::{SuiTransactionBlockEffectsAPI, SuiTransactionBlockResponseOptions},
-    types::{
-        base_types::{ObjectID, SuiAddress},
-        crypto::{EncodeDecodeBase64, Signature, SuiKeyPair},
-        transaction::{Transaction, TransactionData},
-    },
+    types::{base_types::ObjectID, transaction::Transaction},
     SuiClientBuilder,
 };
 
@@ -37,12 +34,6 @@ pub async fn resolve_market(
     Json(payload): Json<ResolveMarketRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     // 1. Load config
-    let admin_mnemonic = std::env::var("ADMIN_MNEMONIC").map_err(|_| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "ADMIN_MNEMONIC not set".to_string(),
-        )
-    })?;
     let network = std::env::var("SUI_NETWORK")
         .unwrap_or_else(|_| "https://fullnode.testnet.sui.io:443".to_string());
     let package_id_str = std::env::var("PACKAGE_ID").map_err(|_| {
@@ -63,21 +54,27 @@ pub async fn resolve_market(
             )
         })?;
 
-    // 3. Setup Keypair
-    // Support `suiprivkey...` (Bech32) or Base64.
-    let keypair = SuiKeyPair::decode(&admin_mnemonic)
-        .or_else(|_| SuiKeyPair::decode_base64(&admin_mnemonic))
-        .map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!(
-                    "Failed to decode ADMIN_MNEMONIC (must be private key): {}",
-                    e
-                ),
-            )
-        })?;
+    // 3. Load Keystore (Admin Wallet) - same approach as contract.rs
+    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    let keystore_path = PathBuf::from(home).join(".sui/sui_config/sui.keystore");
 
-    let sender = SuiAddress::from(&keypair.public());
+    let keystore = FileBasedKeystore::load_or_create(&keystore_path).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to load keystore: {}", e),
+        )
+    })?;
+
+    let addresses = keystore.addresses();
+    if addresses.is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "No accounts found in sui.keystore".to_string(),
+        ));
+    }
+    let sender = addresses[0];
+
+    println!("Oracle: Using Admin Account: {}", sender);
 
     // 4. Prepare Arguments
     let market_id = ObjectID::from_str(&payload.market_id)
@@ -104,7 +101,7 @@ pub async fn resolve_market(
         )
     })?;
 
-    let tx_data: TransactionData = client
+    let tx_data = client
         .transaction_builder()
         .move_call(
             sender,
@@ -125,9 +122,16 @@ pub async fn resolve_market(
             )
         })?;
 
-    // Sign
-    let intent_msg = IntentMessage::new(Intent::sui_transaction(), tx_data.clone());
-    let signature = Signature::new_secure(&intent_msg, &keypair);
+    // Sign using keystore
+    let signature = keystore
+        .sign_secure(&sender, &tx_data, Intent::sui_transaction())
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to sign transaction: {}", e),
+            )
+        })?;
 
     // Execute
     let response = client
