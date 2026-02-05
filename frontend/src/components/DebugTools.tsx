@@ -64,6 +64,8 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
         setNewContractOptions(updated);
     };
 
+    const API_BASE = import.meta.env.DEV ? 'http://localhost:3000' : '';
+
     const handleResolveMarket = async () => {
         if (!selectedMarket) {
             await alert("Please select a market to resolve.");
@@ -78,7 +80,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
         setIsResolving(true);
 
         try {
-            const res = await fetch('http://localhost:3000/oracle/resolve', {
+            const res = await fetch(`${API_BASE}/oracle/resolve`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -112,7 +114,7 @@ export function DebugTools({ categories, contracts, onMarketCreated, onMarketRes
     };
 
     const createMarketBackend = async (name: string, desc: string, options: string[], categoryId: number | null, endDate: string) => {
-        const res = await fetch('http://localhost:3000/contracts', {
+        const res = await fetch(`${API_BASE}/contracts`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

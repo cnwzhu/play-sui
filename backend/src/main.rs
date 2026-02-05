@@ -89,11 +89,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let app = app
-        .layer(CorsLayer::permissive())
+        .layer(
+            CorsLayer::new()
+                .allow_origin(tower_http::cors::Any)
+                .allow_methods([
+                    axum::http::Method::GET,
+                    axum::http::Method::POST,
+                    axum::http::Method::DELETE,
+                    axum::http::Method::OPTIONS,
+                ])
+                .allow_headers([axum::http::header::CONTENT_TYPE]),
+        )
         .with_state(db)
         .layer(axum::Extension(tx));
 
-    let addr = SocketAddr::from(([0, 0, 0, 01], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("listening on {}", addr);
 
     axum::serve(tokio::net::TcpListener::bind(addr).await?, app)

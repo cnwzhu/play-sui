@@ -30,6 +30,9 @@ interface Category {
 }
 
 // Package ID is loaded from environment variable (set in root .env file)
+// Define API Base URL: use localhost:3000 in dev, otherwise relative path
+const API_BASE = import.meta.env.DEV ? 'http://localhost:3000' : '';
+
 // Package ID is loaded from environment variable (set in root .env file)
 const PACKAGE_ID = window.env?.VITE_PACKAGE_ID || import.meta.env.VITE_PACKAGE_ID || "0x0";
 
@@ -78,7 +81,7 @@ function AppContent() {
 
   useEffect(() => {
     // Fetch Categories
-    fetch('http://localhost:3000/categories')
+    fetch(`${API_BASE}/categories`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(err => console.error("Failed to fetch categories:", err));
@@ -96,7 +99,7 @@ function AppContent() {
     }
 
     // Fetch Contracts with filters
-    fetch(`http://localhost:3000/contracts?${params.toString()}`)
+    fetch(`${API_BASE}/contracts?${params.toString()}`)
       .then(res => res.json())
       .then(data => {
         setContracts(data);
@@ -115,7 +118,7 @@ function AppContent() {
 
     // Fetch Favorites if connected
     if (account?.address) {
-      fetch(`http://localhost:3000/favorites/${account.address}`)
+      fetch(`${API_BASE}/favorites/${account.address}`)
         .then(res => res.json())
         .then(data => setFavorites(data))
         .catch(err => console.error("Failed to fetch favorites:", err));
@@ -126,7 +129,7 @@ function AppContent() {
 
   useEffect(() => {
     if (selectedContract && view === 'market') {
-      fetch(`http://localhost:3000/contracts/${selectedContract.id}/history?range=${timeRange}&v=${refetchVersion}`)
+      fetch(`${API_BASE}/contracts/${selectedContract.id}/history?range=${timeRange}&v=${refetchVersion}`)
         .then(res => res.json())
         .then(data => setContractHistory(data))
         .catch(err => console.error(err));
@@ -154,7 +157,7 @@ function AppContent() {
     if (isFav) {
       // Remove
       try {
-        const res = await fetch('http://localhost:3000/favorites', {
+        const res = await fetch(`${API_BASE}/favorites`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ wallet_address: account.address, contract_id: contractId })
@@ -166,7 +169,7 @@ function AppContent() {
     } else {
       // Add
       try {
-        const res = await fetch('http://localhost:3000/favorites', {
+        const res = await fetch(`${API_BASE}/favorites`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ wallet_address: account.address, contract_id: contractId })
