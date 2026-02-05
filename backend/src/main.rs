@@ -78,7 +78,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/market/cancel",
             axum::routing::post(handlers::cancel::cancel_market),
-        );
+        )
+        // Serve dynamic config.js based on backend env vars
+        .route("/config.js", get(handlers::config::get_config));
 
     // Only serve static files in release mode
     #[cfg(not(debug_assertions))]
@@ -91,7 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(db)
         .layer(axum::Extension(tx));
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 01], 3000));
     println!("listening on {}", addr);
 
     axum::serve(tokio::net::TcpListener::bind(addr).await?, app)

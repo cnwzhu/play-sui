@@ -139,24 +139,34 @@ dev-check:
 dev-build:
     export TMPDIR=/tmp && cd backend && cargo build --release
 
-# Build release binary with embedded frontend
+# Build release binary for Linux (using Docker)
 release:
     #!/usr/bin/env bash
     set -e
-    echo "📦 Building frontend..."
-    cd frontend && pnpm build
+    echo "� Building release binary using Docker..."
     
-    echo ""
-    echo "🦀 Building backend (release mode with embedded frontend)..."
-    export TMPDIR=/tmp
-    cd ../backend && cargo build --release
+    # 1. Build the image (includes frontend & backend build)
+    docker build -t play-sui-builder .
     
+    # 2. Extract the binary
+    echo "📦 Extracting binary..."
+    # Create a dummy container to copy files from
+    docker create --name temp-play-sui play-sui-builder
+    # Copy the binary to root
+    docker cp temp-play-sui:/app/backend/target/release/backend ./play-sui
+    chmod +x play-sui
+    
+    # 3. Cleanup
+    echo "🧹 Cleaning up Docker artifacts..."
+    docker rm temp-play-sui
+    docker rmi play-sui-builder
+    # Optional: cleanup dangling images if any were created during build updates
+    docker image prune -f
+
     echo ""
-    echo "✅ Release build complete!"
-    echo "   Binary: backend/target/release/backend"
-    echo ""
-    echo "   Run with: ./backend/target/release/backend"
-    echo "   Then visit: http://localhost:3000"
+    echo "✅ Build successful!"
+    echo "   Binary: ./play-sui"
+    echo "   Architecture: Linux x86_64 (Debian/Ubuntu/CentOS compatible)"
 
 # --- Sui Account Management ---
 

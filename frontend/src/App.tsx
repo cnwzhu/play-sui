@@ -30,7 +30,9 @@ interface Category {
 }
 
 // Package ID is loaded from environment variable (set in root .env file)
-const PACKAGE_ID = import.meta.env.VITE_PACKAGE_ID || "0x0";
+// Package ID is loaded from environment variable (set in root .env file)
+const PACKAGE_ID = window.env?.VITE_PACKAGE_ID || import.meta.env.VITE_PACKAGE_ID || "0x0";
+
 
 function App() {
   return (
