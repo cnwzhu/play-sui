@@ -358,7 +358,7 @@ function AppContent() {
         <main className="max-w-6xl mx-auto px-4 md:px-6 py-8">
           <button
             onClick={() => setView('home')}
-            className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors font-medium"
+            className="flex items-center gap-2 text-slate-400 hover:text-cyan-100 mb-6 transition-colors font-medium"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Markets
@@ -368,15 +368,15 @@ function AppContent() {
             {/* Left Col: Chart & Info */}
             <div className="md:col-span-8 space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                  <Trophy className="w-8 h-8 text-blue-400" />
+                <div className="w-16 h-16 cyber-badge rounded-xl flex items-center justify-center">
+                  <Trophy className="w-8 h-8 text-cyan-200" />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-white leading-tight mb-2">
                     {selectedContract.name}
                   </h1>
                   <div className="flex items-center gap-3 text-sm text-gray-400">
-                    <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded text-xs font-bold uppercase">
+                    <span className="cyber-chip text-xs font-bold uppercase">
                       {categories.find(c => c.id === selectedContract.category_id)?.name || 'Uncategorized'}
                     </span>
                     <span>Vol. {(selectedContract.total_volume * 1_000_000_000).toFixed(0)} MIST</span>
@@ -389,15 +389,15 @@ function AppContent() {
                 </div>
               </div>
 
-              <div className="bg-[#1e212b] border border-gray-800 rounded-xl p-6 min-h-[400px]">
+              <div className="cyber-panel p-6 min-h-[400px]">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="font-bold text-gray-300">Outcome Probability</h3>
+                  <h3 className="font-bold text-slate-200">Outcome Probability</h3>
                   <div className="flex gap-2">
                     {['5m', '1h', '6h', '1d', '1w', '1M'].map(t => (
                       <button
                         key={t}
                         onClick={() => setTimeRange(t)}
-                        className={`px-2 py-1 text-xs font-medium rounded uppercase ${timeRange === t ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}
+                        className={`px-2 py-1 text-xs font-medium rounded uppercase cyber-tab ${timeRange === t ? 'cyber-tab--active' : ''}`}
                       >
                         {t}
                       </button>
@@ -408,7 +408,7 @@ function AppContent() {
               </div>
 
               {/* Description or Rules */}
-              <div className="bg-[#1e212b] border border-gray-800 rounded-xl p-6">
+              <div className="cyber-panel p-6">
                 <h3 className="font-bold text-white mb-2">Rules</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   {selectedContract.description || "This market will resolve to the option that occurs. Result is determined by the designated Oracle."}
@@ -418,18 +418,18 @@ function AppContent() {
 
             {/* Right Col: Trade */}
             <div className="md:col-span-4">
-              <div className="sticky top-6 bg-[#1e212b] border border-gray-800 rounded-xl p-0 overflow-hidden shadow-2xl">
-                <div className="p-4 border-b border-gray-800 bg-[#242832]">
+              <div className="sticky top-6 cyber-panel p-0 overflow-hidden shadow-2xl">
+                <div className="p-4 border-b border-slate-800/70 cyber-panel__header">
                   <h3 className="font-bold text-white flex items-center gap-2">
-                    <Coins className="w-4 h-4 text-yellow-500" />
+                    <Coins className="w-4 h-4 text-amber-300" />
                     {selectedContract.resolved ? 'Market Resolved' : 'Trade'}
                   </h3>
                 </div>
 
                 {/* Resolved Market Banner */}
                 {selectedContract.resolved && (
-                  <div className="p-4 bg-green-500/10 border-b border-green-500/20">
-                    <div className="flex items-center gap-2 text-green-400 font-bold mb-2">
+                  <div className="p-4 bg-emerald-500/10 border-b border-emerald-500/20">
+                    <div className="flex items-center gap-2 text-emerald-300 font-bold mb-2">
                       <CheckCircle2 className="w-5 h-5" />
                       Winner: {currentOptions[selectedContract.winner ?? 0]}
                     </div>
@@ -442,8 +442,8 @@ function AppContent() {
                 <div className="p-5 space-y-6">
                   {/* Outcome Selection */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Select Outcome</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase">Select Outcome</label>
+                    <div className="grid grid-cols-2 gap-3">
                       {currentOptions.map((opt: string, idx: number) => {
                         // Calculate stats
                         const price = currentOdds[idx] || 0;
@@ -456,20 +456,31 @@ function AppContent() {
                             onClick={() => !selectedContract.resolved && setOutcome(idx)}
                             disabled={selectedContract.resolved}
                             className={clsx(
-                              "px-3 py-3 rounded-lg text-sm font-bold border transition-all text-center relative flex flex-col items-center justify-center gap-1 min-h-[4rem]",
+                              "px-3 py-2.5 rounded-lg text-sm font-bold border transition-all text-center relative flex flex-col items-stretch gap-2 min-h-[4rem] cyber-option",
                               selectedContract.resolved && selectedContract.winner === idx
-                                ? "bg-green-500/10 border-green-500 text-green-400"
+                                ? "cyber-option--win"
                                 : selectedContract.resolved
-                                  ? "bg-[#2c303b] border-transparent text-gray-500 cursor-not-allowed"
+                                  ? "cyber-option--disabled"
                                   : outcome === idx
-                                    ? "bg-blue-500/10 border-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.2)]"
-                                    : "bg-[#2c303b] border-transparent text-gray-400 hover:bg-[#363b47]"
+                                    ? "cyber-option--active"
+                                    : "cyber-option--idle"
                             )}
                           >
-                            <span className="leading-tight">{opt}</span>
-                            <span className="text-[10px] font-mono opacity-60">
-                              {percent}% • {formatMistShort(mist)}
-                            </span>
+                            <div className="w-full grid grid-cols-2 gap-2 items-center tabular-nums">
+                              <div className="flex flex-col justify-between min-h-[2.5rem]">
+                                <span className="text-sm font-semibold tracking-wide text-slate-100">
+                                  {opt}
+                                </span>
+                                <span className="text-base font-mono font-bold text-cyan-200">
+                                  {percent}%
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-center">
+                                <span className="text-sm font-mono text-slate-200">
+                                  {formatMistShort(mist)}
+                                </span>
+                              </div>
+                            </div>
                             {!selectedContract.resolved && outcome === idx && <CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-blue-500" />}
                             {selectedContract.resolved && selectedContract.winner === idx && <CheckCircle2 className="w-4 h-4 absolute top-1 right-1 text-green-500" />}
                           </button>
@@ -482,34 +493,34 @@ function AppContent() {
                   {!selectedContract.resolved && (
                     <>
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Amount (MIST)</label>
+                        <label className="text-xs font-bold text-slate-400 uppercase">Amount (MIST)</label>
                         <div className="relative">
                           <input
                             type="number"
                             value={amount}
                             onChange={(e) => setAmount(e.target.value)}
-                            className="w-full bg-[#1a1d26] border border-gray-700 hover:border-gray-500 rounded-lg px-4 py-3 text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 focus:outline-none transition-all duration-200"
+                            className="w-full rounded-lg px-4 py-3 text-white font-mono focus:outline-none transition-all duration-200 cyber-input cyber-number"
                           />
                         </div>
                       </div>
 
                       {/* Platform Fee Display */}
                       {amount && parseFloat(amount) > 0 && (
-                        <div className="space-y-2 bg-[#1a1d26]/50 p-3 rounded-lg border border-gray-800">
-                          <div className="flex justify-between text-xs text-gray-400">
+                        <div className="space-y-2 cyber-panel--sub p-3 rounded-lg border border-slate-800/70">
+                          <div className="flex justify-between text-xs text-slate-400">
                             <span>Your Bet</span>
                             <span className="font-mono">{amount} MIST</span>
                           </div>
-                          <div className="flex justify-between text-xs text-gray-400">
+                          <div className="flex justify-between text-xs text-slate-400">
                             <span>Platform Fee (2%)</span>
-                            <span className="font-mono text-yellow-500">
+                            <span className="font-mono text-amber-300">
                               -{Math.floor(parseFloat(amount) * 0.02)} MIST
                             </span>
                           </div>
-                          <div className="h-px bg-gray-700" />
+                          <div className="h-px bg-slate-700" />
                           <div className="flex justify-between text-sm font-bold text-white">
                             <span>Into Pool</span>
-                            <span className="font-mono text-blue-400">
+                            <span className="font-mono text-cyan-300">
                               {/* Calculate Pool as Amount - Fee to ensure sum is correct (avoiding float precision issues like 10 * 0.98 = 9.8 -> 9) */}
                               {Math.floor(parseFloat(amount)) - Math.floor(parseFloat(amount) * 0.02)} MIST
                             </span>
@@ -520,20 +531,20 @@ function AppContent() {
                       {/* Action Button */}
                       {!account ? (
                         <ConnectButton
-                          className="!w-full !py-3.5 !rounded-lg !font-bold !text-base !bg-blue-600 hover:!bg-blue-500 !text-white !shadow-lg !shadow-blue-900/20 !transition-all !border-none"
+                          className="!w-full !py-3.5 !rounded-lg !font-bold !text-base !border-none cyber-button"
                         />
                       ) : (
                         <button
                           onClick={placeBet}
                           disabled={isProcessing}
-                          className="w-full py-3.5 rounded-lg font-bold text-base bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full py-3.5 rounded-lg font-bold text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed cyber-button"
                         >
                           {isProcessing ? 'Processing...' : `Buy ${currentOptions[outcome]}`}
                         </button>
                       )}
 
-                      <div className="flex items-start gap-2 text-xs text-gray-500 bg-[#1a1d26] p-3 rounded-lg">
-                        <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                      <div className="flex items-start gap-2 text-xs text-slate-400 p-3 rounded-lg cyber-note">
+                        <AlertCircle className="w-3 h-3 mt-0.5 shrink-0 text-cyan-200" />
                         <p>A 2% platform fee is deducted from your bet. Remaining funds held in contract until resolution. Winners share the pool.</p>
                       </div>
                     </>

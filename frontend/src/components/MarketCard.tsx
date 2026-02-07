@@ -72,12 +72,12 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
     return (
         <div
             onClick={() => onClick(contract)}
-            className={`group bg-[#1e212b] border rounded-xl overflow-hidden cursor-pointer transition-all duration-200 flex flex-col justify-between ${isResolved ? 'border-green-700/50 opacity-80' : 'border-gray-800 hover:border-gray-600 hover:shadow-xl hover:shadow-blue-900/10 hover:-translate-y-1'}`}
+            className={`group cyber-card cursor-pointer transition-all duration-200 flex flex-col justify-between ${isResolved ? 'cyber-card--resolved' : 'cyber-card--active'}`}
         >
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-4 relative z-10">
                 {/* Header / Icon */}
                 <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 shrink-0 border rounded-lg flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform ${isResolved ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'}`}>
+                    <div className={`w-12 h-12 shrink-0 rounded-lg flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform cyber-badge ${isResolved ? 'cyber-badge--resolved' : 'cyber-badge--active'}`}>
                         {isResolved ? <CheckCircle className="w-6 h-6" /> : <Trophy className="w-6 h-6" />}
                     </div>
                     <div className="flex-1">
@@ -86,7 +86,7 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                                 Resolved
                             </span>
                         )}
-                        <h3 className="text-white font-medium leading-snug line-clamp-2 h-[3rem]">
+                        <h3 className="text-white font-semibold leading-snug line-clamp-2 h-[3rem] tracking-wide">
                             {contract.name}
                         </h3>
                     </div>
@@ -98,17 +98,20 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                         // Binary Layout (Yes/No rows)
                         <>
                             <div className="flex items-center justify-between group/row">
-                                <span className={`text-sm font-medium flex items-center gap-2 ${winnerIndex === 0 ? 'text-green-400' : 'text-gray-300'}`}>
+                                <span className={`text-sm font-medium flex items-center gap-2 ${winnerIndex === 0 ? 'text-emerald-300' : 'text-slate-200'}`}>
                                     {winnerIndex === 0 && <CheckCircle className="w-4 h-4" />}
                                     {options[0]}
-                                    {winnerIndex === 0 && <span className="text-xs font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-green-400">WIN</span>}
+                                    {winnerIndex === 0 && <span className="text-xs font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-300">WIN</span>}
                                 </span>
-                                <div className="flex items-center gap-3">
-                                    <div className="text-right flex flex-col justify-center">
-                                        <div className="text-green-400 font-bold leading-none text-sm">{percentages[0]}%</div>
-                                        <div className="text-[10px] text-gray-500 font-mono leading-none mt-1 opacity-75">
+                                <div className="flex items-center gap-4">
+                                    <div className="min-w-[120px] flex items-center justify-end gap-2">
+                                        <span className="text-emerald-300 font-bold text-base font-mono tabular-nums text-right min-w-[42px]">
+                                            {percentages[0]}%
+                                        </span>
+                                        <span className="h-3 w-px bg-slate-600/70" />
+                                        <span className="text-[11px] text-slate-400 font-mono opacity-80 tabular-nums text-left min-w-[52px]">
                                             {formatMist(prices[0] * volumeInMist)}
-                                        </div>
+                                        </span>
                                     </div>
                                     {!isResolved && (
                                         <div
@@ -116,7 +119,7 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                                                 e.stopPropagation();
                                                 onClick(contract, 0);
                                             }}
-                                            className="px-3 py-1.5 rounded-lg bg-[#1a3a3a] border border-[#00c99b]/20 text-[#00c99b] text-[10px] font-bold uppercase tracking-wider hover:bg-[#00c99b] hover:text-black hover:border-transparent transition-all min-w-[70px] text-center"
+                                            className="cyber-cta cyber-cta--yes"
                                         >
                                             Buy Yes
                                         </div>
@@ -124,17 +127,20 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                                 </div>
                             </div>
                             <div className="flex items-center justify-between group/row">
-                                <span className={`text-sm font-medium flex items-center gap-2 ${winnerIndex === 1 ? 'text-green-400' : 'text-gray-300'}`}>
+                                <span className={`text-sm font-medium flex items-center gap-2 ${winnerIndex === 1 ? 'text-emerald-300' : 'text-slate-200'}`}>
                                     {winnerIndex === 1 && <CheckCircle className="w-4 h-4" />}
                                     {options[1]}
-                                    {winnerIndex === 1 && <span className="text-xs font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-green-400">WIN</span>}
+                                    {winnerIndex === 1 && <span className="text-xs font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-300">WIN</span>}
                                 </span>
-                                <div className="flex items-center gap-3">
-                                    <div className="text-right flex flex-col justify-center">
-                                        <div className="text-red-400 font-bold leading-none text-sm">{percentages[1]}%</div>
-                                        <div className="text-[10px] text-gray-500 font-mono leading-none mt-1 opacity-75">
+                                <div className="flex items-center gap-4">
+                                    <div className="min-w-[120px] flex items-center justify-end gap-2">
+                                        <span className="text-rose-300 font-bold text-base font-mono tabular-nums text-right min-w-[42px]">
+                                            {percentages[1]}%
+                                        </span>
+                                        <span className="h-3 w-px bg-slate-600/70" />
+                                        <span className="text-[11px] text-slate-400 font-mono opacity-80 tabular-nums text-left min-w-[52px]">
                                             {formatMist(prices[1] * volumeInMist)}
-                                        </div>
+                                        </span>
                                     </div>
                                     {!isResolved && (
                                         <div
@@ -142,7 +148,7 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                                                 e.stopPropagation();
                                                 onClick(contract, 1);
                                             }}
-                                            className="px-3 py-1.5 rounded-lg bg-[#3a1a1a] border border-[#ff4d4d]/20 text-[#ff4d4d] text-[10px] font-bold uppercase tracking-wider hover:bg-[#ff4d4d] hover:text-white hover:border-transparent transition-all min-w-[70px] text-center"
+                                            className="cyber-cta cyber-cta--no"
                                         >
                                             Buy No
                                         </div>
@@ -154,27 +160,28 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                         // Multi-option layout (Scrollable list - unified styling with dynamic colors)
                         <div className="max-h-[140px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
                             {options.map((opt: string, idx: number) => {
-                                const textColors = ["text-blue-400", "text-red-400", "text-green-400", "text-yellow-400", "text-purple-400", "text-pink-400", "text-cyan-400", "text-orange-400"];
-                                const bgHoverColors = ["hover:bg-blue-500", "hover:bg-red-500", "hover:bg-green-500", "hover:bg-yellow-500", "hover:bg-purple-500", "hover:bg-pink-500", "hover:bg-cyan-500", "hover:bg-orange-500"];
+                                const textColors = ["text-cyan-300", "text-rose-300", "text-emerald-300", "text-amber-300", "text-fuchsia-300", "text-pink-300", "text-sky-300", "text-orange-300"];
+                                const bgHoverColors = ["hover:bg-cyan-500", "hover:bg-rose-500", "hover:bg-emerald-500", "hover:bg-amber-500", "hover:bg-fuchsia-500", "hover:bg-pink-500", "hover:bg-sky-500", "hover:bg-orange-500"];
                                 const textColor = textColors[idx % textColors.length];
                                 const hoverBg = bgHoverColors[idx % bgHoverColors.length];
 
                                 const isWinner = winnerIndex === idx;
                                 return (
                                     <div key={idx} className="flex items-center justify-between group/row">
-                                        <span className={`text-sm font-medium truncate max-w-[50%] flex items-center gap-2 ${isWinner ? 'text-green-400' : 'text-gray-300'}`}>
+                                        <span className={`text-sm font-medium truncate max-w-[50%] flex items-center gap-2 ${isWinner ? 'text-emerald-300' : 'text-slate-200'}`}>
                                             {isWinner && <CheckCircle className="w-4 h-4 shrink-0" />}
                                             {opt}
-                                            {isWinner && <span className="text-xs font-bold bg-green-500/10 px-1.5 py-0.5 rounded text-green-400">WIN</span>}
+                                            {isWinner && <span className="text-xs font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded text-emerald-300">WIN</span>}
                                         </span>
-                                        <div className="flex items-center gap-3">
-                                            <div className="text-right flex flex-col justify-center">
-                                                <div className={`${isWinner ? 'text-green-400' : textColor} font-bold text-sm leading-none`}>
+                                        <div className="flex items-center gap-4">
+                                            <div className="min-w-[120px] flex items-center justify-end gap-2">
+                                                <span className={`${isWinner ? 'text-emerald-300' : textColor} font-bold text-base font-mono tabular-nums text-right min-w-[42px]`}>
                                                     {percentages[idx] || 0}%
-                                                </div>
-                                                <div className="text-[10px] text-gray-500 font-mono leading-none mt-1 opacity-75">
+                                                </span>
+                                                <span className="h-3 w-px bg-slate-600/70" />
+                                                <span className="text-[11px] text-slate-400 font-mono opacity-80 tabular-nums text-left min-w-[52px]">
                                                     {formatMist((prices[idx] || 0) * volumeInMist)}
-                                                </div>
+                                                </span>
                                             </div>
                                             {!isResolved && (
                                                 <div
@@ -182,7 +189,7 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                                                         e.stopPropagation();
                                                         onClick(contract, idx);
                                                     }}
-                                                    className={`px-3 py-1.5 rounded-lg bg-[#2c303b] border border-gray-700 ${textColor} text-[10px] font-bold uppercase tracking-wider ${hoverBg} hover:text-white hover:border-transparent transition-all min-w-[70px] text-center`}
+                                                    className={`cyber-cta cyber-cta--multi ${textColor} ${hoverBg}`}
                                                 >
                                                     Buy {opt}
                                                 </div>
@@ -197,21 +204,21 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 border-t border-gray-800 flex items-center justify-between bg-[#242832]/50">
+            <div className="px-4 py-3 border-t border-slate-800/80 flex items-center justify-between bg-[#1a1f2a]/60 relative z-10">
                 <div className="flex items-center gap-4">
-                    <span className="text-xs text-gray-500 font-medium font-mono flex items-center gap-1.5">
+                    <span className="text-xs text-slate-400 font-medium font-mono flex items-center gap-1.5">
                         <TrendingUp className="w-3 h-3" />
                         {volume}
                     </span>
                     {!isResolved && endDateDisplay && (
-                        <span className="text-xs text-gray-500 font-medium font-mono flex items-center gap-1.5 border-l border-gray-700 pl-4">
+                        <span className="text-xs text-slate-400 font-medium font-mono flex items-center gap-1.5 border-l border-slate-700 pl-4">
                             <Calendar className="w-3 h-3" />
                             {endDateDisplay}
                         </span>
                     )}
                 </div>
-                <div className="flex gap-3 text-gray-600">
-                    <Gift className="w-4 h-4 hover:text-white transition-colors" />
+                <div className="flex gap-3 text-slate-500">
+                    <Gift className="w-4 h-4 hover:text-cyan-200 transition-colors" />
                     <div
                         onClick={(e) => {
                             if (onToggleFavorite) {
@@ -219,10 +226,10 @@ export function MarketCard({ contract, onClick, isFavorite = false, onToggleFavo
                                 onToggleFavorite(e);
                             }
                         }}
-                        className={`transition-colors p-1 -m-1 rounded-full hover:bg-white/5 ${isFavorite ? 'text-yellow-500 hover:text-yellow-400' : 'hover:text-white'}`}
+                        className={`transition-colors p-1 -m-1 rounded-full hover:bg-cyan-500/10 ${isFavorite ? 'text-amber-300 hover:text-amber-200' : 'hover:text-cyan-200'}`}
                     >
                         <Star
-                            className={`w-4 h-4 ${isFavorite ? 'fill-yellow-500' : ''}`}
+                            className={`w-4 h-4 ${isFavorite ? 'fill-amber-300' : ''}`}
                             style={isFavorite ? {} : { fill: 'none' }}
                         />
                         {/* Actually Trophy is not a star. Wait, I should use Star. I will import Star from lucide-react first. */}

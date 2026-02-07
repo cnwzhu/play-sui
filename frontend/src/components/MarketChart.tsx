@@ -58,25 +58,25 @@ const MarketChart = ({ data, options }: MarketChartProps) => {
                             </linearGradient>
                         ))}
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#223042" vertical={false} />
                     <XAxis
                         dataKey="date"
-                        stroke="#9ca3af"
+                        stroke="#94a3b8"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
                         minTickGap={30}
                     />
                     <YAxis
-                        stroke="#9ca3af"
+                        stroke="#94a3b8"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
                         unit="%"
                     />
                     <Tooltip
-                        contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#fff' }}
-                        itemStyle={{ color: '#fff' }}
+                        contentStyle={{ backgroundColor: '#0f172a', borderColor: 'rgba(56, 189, 248, 0.35)', color: '#e2faff' }}
+                        itemStyle={{ color: '#e2faff' }}
                         formatter={(value: any, name: any, item: any) => {
                             const totalVolumeSUI = item.payload.total_volume;
                             const totalVolumeMIST = totalVolumeSUI * 1_000_000_000;
@@ -84,7 +84,7 @@ const MarketChart = ({ data, options }: MarketChartProps) => {
                             const amount = (percentage / 100) * totalVolumeMIST;
                             return [`${value}% (${formatMist(amount)} MIST)`, name];
                         }}
-                        labelStyle={{ color: '#9ca3af', marginBottom: '0.5rem' }}
+                        labelStyle={{ color: '#7dd3fc', marginBottom: '0.5rem' }}
                     />
                     <Legend />
                     {Array.from({ length: numOptions }).map((_, idx) => (

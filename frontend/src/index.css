@@ -51,6 +51,261 @@
   }
 }
 
+@layer components {
+  .cyber-card {
+    position: relative;
+    border-radius: 18px;
+    background: linear-gradient(140deg, rgba(12, 16, 24, 0.95), rgba(22, 26, 38, 0.92));
+    border: 1px solid rgba(70, 86, 110, 0.45);
+    box-shadow: 0 18px 40px rgba(8, 12, 20, 0.6), inset 0 0 0 1px rgba(8, 180, 255, 0.04);
+    overflow: hidden;
+  }
+
+  .cyber-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 60% at 10% -10%, rgba(0, 255, 240, 0.16), transparent 60%),
+      radial-gradient(120% 80% at 100% 0%, rgba(255, 0, 153, 0.12), transparent 55%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 22%);
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  .cyber-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.02) 0px,
+      rgba(255, 255, 255, 0.02) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    opacity: 0.35;
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .cyber-card--active:hover {
+    transform: translateY(-6px);
+    border-color: rgba(0, 255, 224, 0.45);
+    box-shadow:
+      0 22px 60px rgba(0, 255, 224, 0.1),
+      0 12px 28px rgba(8, 12, 20, 0.55),
+      inset 0 0 0 1px rgba(0, 255, 224, 0.08);
+  }
+
+  .cyber-card--resolved {
+    border-color: rgba(0, 255, 160, 0.3);
+    opacity: 0.86;
+  }
+
+  .cyber-badge {
+    border: 1px solid rgba(0, 224, 255, 0.35);
+    background: linear-gradient(135deg, rgba(0, 224, 255, 0.12), rgba(122, 0, 255, 0.08));
+    box-shadow: 0 0 18px rgba(0, 224, 255, 0.18);
+  }
+
+  .cyber-badge--resolved {
+    border-color: rgba(0, 255, 160, 0.4);
+    box-shadow: 0 0 16px rgba(0, 255, 160, 0.2);
+  }
+
+  .cyber-badge--active {
+    border-color: rgba(0, 224, 255, 0.45);
+  }
+
+  .cyber-cta {
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 224, 255, 0.25);
+    background: linear-gradient(135deg, rgba(0, 224, 255, 0.12), rgba(0, 64, 92, 0.35));
+    color: rgba(0, 224, 255, 0.95);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    min-width: 72px;
+    text-align: center;
+    transition: all 150ms ease;
+  }
+
+  .cyber-cta:hover {
+    color: #04070c;
+    border-color: transparent;
+    box-shadow: 0 0 16px rgba(0, 255, 224, 0.35);
+    background: linear-gradient(135deg, rgba(0, 255, 224, 0.95), rgba(0, 180, 255, 0.9));
+  }
+
+  .cyber-cta--yes {
+    border-color: rgba(0, 255, 200, 0.35);
+    background: linear-gradient(135deg, rgba(0, 255, 200, 0.12), rgba(0, 64, 56, 0.4));
+    color: rgba(0, 255, 200, 0.95);
+  }
+
+  .cyber-cta--yes:hover {
+    background: linear-gradient(135deg, rgba(0, 255, 200, 0.95), rgba(0, 220, 150, 0.9));
+  }
+
+  .cyber-cta--no {
+    border-color: rgba(255, 70, 160, 0.35);
+    background: linear-gradient(135deg, rgba(255, 70, 160, 0.12), rgba(72, 10, 44, 0.5));
+    color: rgba(255, 110, 190, 0.95);
+  }
+
+  .cyber-cta--no:hover {
+    background: linear-gradient(135deg, rgba(255, 70, 160, 0.95), rgba(255, 120, 200, 0.9));
+  }
+
+  .cyber-cta--multi {
+    background: linear-gradient(135deg, rgba(52, 60, 78, 0.7), rgba(28, 32, 46, 0.9));
+    border-color: rgba(88, 102, 128, 0.5);
+  }
+
+  .cyber-panel {
+    position: relative;
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(12, 16, 24, 0.98), rgba(22, 26, 38, 0.95));
+    border: 1px solid rgba(72, 90, 120, 0.5);
+    box-shadow: 0 18px 40px rgba(8, 12, 20, 0.6), inset 0 0 0 1px rgba(8, 180, 255, 0.04);
+    overflow: hidden;
+  }
+
+  .cyber-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 60% at 10% -10%, rgba(0, 255, 240, 0.12), transparent 60%),
+      radial-gradient(120% 80% at 100% 0%, rgba(255, 0, 153, 0.1), transparent 55%);
+    opacity: 0.8;
+    pointer-events: none;
+  }
+
+  .cyber-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.018) 0px,
+      rgba(255, 255, 255, 0.018) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    opacity: 0.28;
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .cyber-panel__header {
+    background: linear-gradient(90deg, rgba(0, 224, 255, 0.12), rgba(255, 0, 153, 0.08));
+  }
+
+  .cyber-panel--sub {
+    background: linear-gradient(145deg, rgba(8, 12, 20, 0.7), rgba(20, 26, 38, 0.7));
+  }
+
+  .cyber-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 224, 255, 0.35);
+    background: rgba(0, 224, 255, 0.12);
+    color: #78f3ff;
+  }
+
+  .cyber-tab {
+    border: 1px solid transparent;
+    color: #94a3b8;
+    transition: all 150ms ease;
+  }
+
+  .cyber-tab:hover {
+    color: #e2faff;
+  }
+
+  .cyber-tab--active {
+    background: rgba(0, 224, 255, 0.12);
+    border-color: rgba(0, 224, 255, 0.45);
+    color: #e2faff;
+    box-shadow: 0 0 12px rgba(0, 224, 255, 0.2);
+  }
+
+  .cyber-input {
+    background: rgba(10, 14, 22, 0.85);
+    border: 1px solid rgba(88, 102, 128, 0.6);
+    box-shadow: inset 0 0 12px rgba(0, 224, 255, 0.08);
+  }
+
+  .cyber-input:focus {
+    border-color: rgba(0, 224, 255, 0.7);
+    box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.2), inset 0 0 14px rgba(0, 224, 255, 0.12);
+  }
+
+  .cyber-number::-webkit-outer-spin-button,
+  .cyber-number::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .cyber-number {
+    -moz-appearance: textfield;
+  }
+
+  .cyber-option {
+    background: rgba(22, 26, 38, 0.9);
+    border-color: rgba(88, 102, 128, 0.45);
+    color: #cbd5f5;
+  }
+
+  .cyber-option--idle:hover {
+    border-color: rgba(0, 224, 255, 0.55);
+    color: #e2faff;
+    box-shadow: 0 0 14px rgba(0, 224, 255, 0.12);
+  }
+
+  .cyber-option--active {
+    background: rgba(0, 224, 255, 0.14);
+    border-color: rgba(0, 224, 255, 0.7);
+    color: #e2faff;
+    box-shadow: 0 0 18px rgba(0, 224, 255, 0.2);
+  }
+
+  .cyber-option--win {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.6);
+    color: #a7f3d0;
+  }
+
+  .cyber-option--disabled {
+    background: rgba(34, 39, 52, 0.8);
+    border-color: transparent;
+    color: rgba(148, 163, 184, 0.6);
+    cursor: not-allowed;
+  }
+
+  .cyber-button {
+    background: linear-gradient(120deg, rgba(0, 224, 255, 0.85), rgba(0, 128, 255, 0.9));
+    color: #04070c;
+    box-shadow: 0 12px 26px rgba(0, 120, 255, 0.35), 0 0 16px rgba(0, 224, 255, 0.35);
+  }
+
+  .cyber-button:hover {
+    background: linear-gradient(120deg, rgba(0, 255, 224, 0.95), rgba(0, 160, 255, 0.95));
+  }
+
+  .cyber-note {
+    background: linear-gradient(145deg, rgba(8, 12, 20, 0.75), rgba(20, 26, 38, 0.75));
+    border: 1px solid rgba(88, 102, 128, 0.45);
+  }
+}
+
 /* React DatePicker Dark Theme */
 .datepicker-dark .react-datepicker {
   background-color: #1e212b;
